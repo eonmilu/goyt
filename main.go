@@ -21,14 +21,15 @@ const (
 	// RootDomain : A-record of the domain
 	RootDomain = "oxygenrain.com"
 	// ConfigPath : path to the user, password and database
-	ConfigPath = "/etc/postgres/dietpi.cfg"
+	ConfigPath = "/etc/postgresql/dietpi.cfg"
 )
 
 var (
 	dbinfo string
 	err    error
-	db, _  = sql.Open("postgres", "")
+	db     *sql.DB
 	cfg    Config
+	ok     bool
 )
 
 func init() {
@@ -47,17 +48,6 @@ func init() {
 	}
 }
 
-// Timemark : data structure for a timemark
-type Timemark struct {
-	timemarkID int64
-	author     string
-	authorURL  string
-	time       int64
-	content    string
-	votes      int64
-	date       int64
-}
-
 // Config : configuration used for instantiating the database
 type Config struct {
 	User     string
@@ -70,35 +60,6 @@ func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
 	target := RootDomain + r.URL.RequestURI()
 	http.Redirect(w, r, "https://"+target, http.StatusMovedPermanently)
 	log.Printf("REDIRECT %s FROM %s TO %s", r.RemoteAddr, "http://"+target, "https://"+target)
-}
-
-func timemarksHandler(w http.ResponseWriter, r *http.Request) {
-	t := Timemark{}
-	videoID := r.URL.Query().Get("v")
-	offset := r.URL.Query().Get("offset")
-	if offset == "" {
-		offset = "0"
-	}
-	limit := r.URL.Query().Get("limit")
-	if limit == "" {
-		limit = "0"
-	}
-	rows, err := db.Query("SELECT id, author, authorURL, time, content, votes, date FROM timemarks WHERE id = $1 ORDER BY votes OFFSET $2 LIMIT $3", videoID, offset, limit)
-	defer rows.Close()
-	if err != nil {
-		fmt.Fprintf(w, "")
-		log.Printf("DATABASE CONNECTION FAILED %s IP %s", err, r.RemoteAddr)
-	} else {
-		for rows.Next() {
-			err = rows.Scan(&t.timemarkID, &t.author, &t.authorURL, &t.time, &t.content, &t.votes, &t.date)
-		}
-		s, err := json.Marshal(t)
-		if err != nil {
-			log.Printf("QUERY ERROR %s IP %s", err, r.RemoteAddr)
-		} else {
-			fmt.Fprintf(w, string(s))
-		}
-	}
 }
 
 func main() {
