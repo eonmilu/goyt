@@ -7,13 +7,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
 const (
 	// FilePath : path to the files to be served
-	FilePath = "/var/www/public"
+	FilePath = "/var/www/public/"
 	// CertPath : path to the TLS certificate file
 	CertPath = "/etc/letsencrypt/archive/oxygenrain.com/cert1.pem"
 	// KeyPath : path to the TLS private key file
@@ -26,13 +28,16 @@ const (
 
 var (
 	dbinfo string
-	err    error
 	db     *sql.DB
 	cfg    Config
+	err    error
 	ok     bool
 )
 
 func init() {
+	// Read credentials and open connection to the database
+	log.Println("Opening connection to the database...")
+	defer log.Println("Done")
 	raw, err := ioutil.ReadFile(ConfigPath)
 	if err != nil {
 		log.Panic(err)
@@ -55,18 +60,23 @@ type Config struct {
 	Database string
 }
 
-// Redirect the incoming HTTP request to HTTPS
-func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
-	target := RootDomain + r.URL.RequestURI()
-	http.Redirect(w, r, "https://"+target, http.StatusMovedPermanently)
-	log.Printf("REDIRECT %s FROM %s TO %s", r.RemoteAddr, "http://"+target, "https://"+target)
-}
-
 func main() {
 	defer db.Close()
-	http.Handle("/", http.FileServer(http.Dir("/var/www/public")))
-	http.HandleFunc("/yourtime/search", timemarksHandler)
-	// Listen to HTTP trafic and redirect it to HTTPS
-	go log.Panic(http.ListenAndServe(":8080", http.HandlerFunc(redirectToHTTPS)))
-	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, nil))
+	// Redirect the incoming HTTP request to HTTPS
+	go http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer log.Printf("HTTP redirect enabled")
+		target := RootDomain + r.URL.RequestURI()
+		http.Redirect(w, r, "https://"+target, http.StatusMovedPermanently)
+		log.Printf("REDIRECT %s FROM %s TO %s", r.RemoteAddr, "http://"+target, "https://"+target)
+	}))
+	r := mux.NewRouter()
+	r.Handle("/", http.FileServer(http.Dir(FilePath)))
+	r.HandleFunc("/yourtime/search", searchTimemarksHandler)
+
+	srv := &http.Server{
+		Handler:      r,
+		Addr:         ":8443",
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second}
+	srv.ListenAndServeTLS(CertPath, KeyPath)
 }
