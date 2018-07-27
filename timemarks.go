@@ -38,9 +38,9 @@ func searchTimemarksHandler(w http.ResponseWriter, r *http.Request) {
 	var (
 		offset string
 		limit  string
-		ok     bool
+		t      Timemark
+		p      []Timemark
 	)
-	t := Timemark{}
 	videoID := r.URL.Query().Get("v")
 	// Get and set offset to default value if not specified
 	if offset = r.URL.Query().Get("offset"); offset == "" {
@@ -58,23 +58,23 @@ func searchTimemarksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for rows.Next() {
-		ok = true
 		err = rows.Scan(&t.TimemarkID, &t.Author, &t.AuthorURL, &t.Timemark, &t.Content, &t.Votes, &t.Date)
+		p = append(p, t)
 	}
 	if err != nil {
-		log.Printf("QUERY ERROR %s IP %s", err, r.RemoteAddr)
 		fmt.Fprintf(w, SCError)
+		log.Printf("QUERY ERROR %s IP %s", err, r.RemoteAddr)
 		return
 	}
-	// Check ok to see if there were any results
-	if !ok {
+	// Check p's length to see if there were any results
+	if len(p) == 0 {
 		fmt.Fprintf(w, SCNotFound)
 		return
 	}
-	s, err := json.Marshal(t)
+	s, err := json.Marshal(p)
 	if err != nil {
-		log.Printf("JSON ERROR %s IP %s", err, r.RemoteAddr)
 		fmt.Fprintf(w, SCError)
+		log.Printf("JSON ERROR %s IP %s", err, r.RemoteAddr)
 		return
 	}
 	fmt.Fprintf(w, SCFound+string(s))
