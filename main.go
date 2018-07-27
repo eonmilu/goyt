@@ -71,12 +71,12 @@ func main() {
 	}))
 	r := mux.NewRouter()
 	r.Handle("/", http.FileServer(http.Dir(FilePath)))
-	r.HandleFunc("/yourtime/search", searchTimemarksHandler)
+	r.HandleFunc("/yourtime/search", searchTimemarksHandler).Methods("GET", "OPTIONS")
 
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         ":8443",
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second}
-	srv.ListenAndServeTLS(CertPath, KeyPath)
+	log.Panic(srv.ListenAndServeTLS(CertPath, KeyPath))
 }
