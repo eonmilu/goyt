@@ -34,7 +34,7 @@ const (
 	tmrkDefLimit = "10"
 )
 
-func searchTimemarksHandler(w http.ResponseWriter, r *http.Request) {
+func searchTmrksAPI(w http.ResponseWriter, r *http.Request) {
 	var (
 		offset string
 		limit  string
@@ -78,4 +78,8 @@ func searchTimemarksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, SCFound+string(s))
+}
+
+func insertTmrksAPI(w http.ResponseWriter, r *http.Request) {
+
 }
