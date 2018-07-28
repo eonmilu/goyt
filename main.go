@@ -30,10 +30,8 @@ const (
 var (
 	dbinfo string
 	db     *sql.DB
-	cfg    Config
-	err    error
-	ok     bool
-	c      *cors.Cors
+	dbcfg  Config
+	rscors *cors.Cors
 )
 
 func init() {
@@ -44,22 +42,20 @@ func init() {
 	if err != nil {
 		log.Panic(err)
 	}
-	err = json.Unmarshal(raw, &cfg)
+	err = json.Unmarshal(raw, &dbcfg)
 	if err != nil {
 		log.Panic(err)
 	}
-	dbinfo = fmt.Sprintf("user=%s password=%s dbname=%s", cfg.User, cfg.Password, cfg.Database)
+	dbinfo = fmt.Sprintf("user=%s password=%s dbname=%s", dbcfg.User, dbcfg.Password, dbcfg.Database)
 	db, err = sql.Open("postgres", dbinfo)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	// Allow CORS
-	c = cors.New(cors.Options{
+	rscors = cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
-		// Enable Debugging for testing, consider disabling in production
-		Debug: true,
 	})
 }
 
@@ -82,5 +78,5 @@ func main() {
 	r.Handle("/", http.FileServer(http.Dir(FilePath)))
 	r.HandleFunc("/yourtime/search", searchTmrksAPI)
 
-	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, c.Handler(r)))
+	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, rscors.Handler(r)))
 }
