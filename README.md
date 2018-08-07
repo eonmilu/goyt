@@ -8,4 +8,4 @@ Execute `go run main.go` or build a binary as explained in the Compilation secti
 
 ## Compilation
 
-Run `go make` for a permanent binary.
+Run `go build` for a permanent binary.
