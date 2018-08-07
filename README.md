@@ -1,4 +1,4 @@
-# Your Time Server [![Build status](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png)](https://travis-ci.org/eonmilu/yourtime-server/)
+# Your Time Server [![Build status](https://travis-ci.org/eonmilu/yourtime-server.svg?branch=master)](https://travis-ci.org/eonmilu/yourtime-server/)
 
 Backend of the oxygenrain.com server which handles the API used by the Your Time web extension.
 
