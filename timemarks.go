@@ -34,7 +34,10 @@ const (
 	tmrkDefLimit = "10"
 )
 
-func searchTmrksAPI(w http.ResponseWriter, r *http.Request) {
+func searchYourTimeAPI(w http.ResponseWriter, r *http.Request) {
+	// Allow CORS
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var (
 		offset string
 		limit  string

@@ -8,8 +8,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rs/cors"
-
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -31,7 +29,6 @@ var (
 	dbinfo string
 	db     *sql.DB
 	dbcfg  Config
-	rscors *cors.Cors
 )
 
 func init() {
@@ -51,12 +48,6 @@ func init() {
 	if err != nil {
 		log.Panic(err)
 	}
-
-	// Allow CORS
-	rscors = cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowCredentials: true,
-	})
 }
 
 // Config : configuration used to initialize the database
@@ -76,7 +67,7 @@ func main() {
 	}))
 	r := mux.NewRouter()
 	r.Handle("/", http.FileServer(http.Dir(FilePath)))
-	r.HandleFunc("/yourtime/search", searchTmrksAPI)
+	r.HandleFunc("/yourtime/search", searchYourTimeAPI)
 
-	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, rscors.Handler(r)))
+	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, r))
 }
