@@ -66,8 +66,8 @@ func main() {
 		log.Printf("REDIRECT %s FROM %s TO %s", r.RemoteAddr, "http://"+target, "https://"+target)
 	}))
 	r := mux.NewRouter()
-	r.Handle("/", http.FileServer(http.Dir(FilePath)))
 	r.HandleFunc("/yourtime/search", searchYourTimeAPI)
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(FilePath)))
 
 	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, r))
 }
