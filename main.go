@@ -26,9 +26,16 @@ const (
 )
 
 var (
+	// DBInfo contains the credentials needed to access the database encoded in JSON
 	dbinfo string
-	db     *sql.DB
-	dbcfg  Config
+	// DB is the database object representing the Your Time database
+	DB *sql.DB
+	// DBCfg is a struct containing the raw credentials
+	dbcfg struct {
+		User     string
+		Password string
+		Database string
+	}
 )
 
 func init() {
@@ -44,21 +51,14 @@ func init() {
 		log.Panic(err)
 	}
 	dbinfo = fmt.Sprintf("user=%s password=%s dbname=%s", dbcfg.User, dbcfg.Password, dbcfg.Database)
-	db, err = sql.Open("postgres", dbinfo)
+	DB, err = sql.Open("postgres", dbinfo)
 	if err != nil {
 		log.Panic(err)
 	}
 }
 
-// Config : configuration used to initialize the database
-type Config struct {
-	User     string
-	Password string
-	Database string
-}
-
 func main() {
-	defer db.Close()
+	defer DB.Close()
 	// Redirect the incoming HTTP request to HTTPS
 	go http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		target := RootDomain + r.URL.RequestURI()
@@ -66,7 +66,9 @@ func main() {
 		log.Printf("REDIRECT %s FROM %s TO %s", r.RemoteAddr, "http://"+target, "https://"+target)
 	}))
 	r := mux.NewRouter()
-	r.HandleFunc("/yourtime/search", searchYourTimeAPI)
+	r.HandleFunc("/yourtime/search", SearchYourTimeAPI)
+	r.HandleFunc("/yourtime/insert", InsertYourTimeAPI)
+	r.HandleFunc("/yourtime/auth/token", TokenAuthYourTimeAPI)
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(FilePath)))
 
 	log.Panic(http.ListenAndServeTLS(":8443", CertPath, KeyPath, r))
