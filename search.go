@@ -10,7 +10,7 @@ import (
 // Search writes to the ResponseWriter a JSON-encoded array
 // of Timemark objects matching the given URL, offset and limit
 func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
-	EnableCORS(&w)
+	EnableCORS(w)
 
 	params := parameters{
 		videoID: r.URL.Query().Get("v"),
@@ -42,9 +42,9 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 }
 
 // EnableCORS edits the response headers to allow CORS from any source
-func EnableCORS(w *http.ResponseWriter) {
-	(*w).Header().Set("Content-Type", "text/html; charset=utf-8")
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+func EnableCORS(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 type timemarksDB struct {
