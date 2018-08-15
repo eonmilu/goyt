@@ -1,4 +1,4 @@
-package yourtime
+package goyt
 
 import "database/sql"
 

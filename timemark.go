@@ -1,4 +1,4 @@
-package yourtime
+package goyt
 
 // Timemark is the data structure for a timemark
 type Timemark struct {
