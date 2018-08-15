@@ -17,15 +17,16 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 		offset:  offset(r.URL.Query().Get("offset")),
 		limit:   limit(r.URL.Query().Get("limit")),
 	}
-
 	params.checkParametersValue()
+
 	p, err := timemarksDB{y.DB}.getTimemarks(params)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
+		fmt.Printf("%s", err)
 		return
 	}
 
-	// Check p's length to see if there were any result
+	// Check p's length to see if there was any result
 	if len(p) == 0 {
 		fmt.Fprintf(w, sCNotFound)
 		return
@@ -34,6 +35,7 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	s, err := json.Marshal(p)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
+		fmt.Printf("%s", err)
 		return
 	}
 	fmt.Fprintf(w, sCFound+string(s))
@@ -69,6 +71,9 @@ func (tdb timemarksDB) getTimemarks(params parameters) ([]Timemark, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+	if rows.Err() != nil {
+		return nil, err
 	}
 
 	return p, nil
