@@ -1,6 +1,10 @@
 package goyt
 
-import "database/sql"
+import (
+	"database/sql"
+
+	_ "github.com/lib/pq"
+)
 
 const (
 	sCFound    = "200"
