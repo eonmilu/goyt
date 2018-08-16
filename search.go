@@ -56,8 +56,7 @@ func (tdb timemarksDB) getTimemarks(params parameters) ([]Timemark, error) {
 		t Timemark
 		p []Timemark
 	)
-	// TODO: fix invalid input for integer ""
-	rows, err := tdb.Query("SELECT id, author, authorURL, timemark, content, votes, date FROM timemarks WHERE videoid = $1 ORDER BY votes OFFSET $2 LIMIT $3", params.videoID, string(params.offset), string(params.limit))
+	rows, err := tdb.Query("SELECT id, author, authorURL, timemark, content, votes, date FROM timemarks WHERE videoid = $1 ORDER BY votes OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
 	if err != nil {
 		return nil, err
 	}
