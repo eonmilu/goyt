@@ -17,7 +17,7 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 		offset:  offset(r.URL.Query().Get("offset")),
 		limit:   limit(r.URL.Query().Get("limit")),
 	}
-	params.checkParametersValue()
+	params.checkParameters()
 
 	p, err := timemarksDB{y.DB}.getTimemarks(params)
 	if err != nil {
@@ -87,7 +87,7 @@ type timemarkRange interface {
 	isEmpty() bool
 }
 
-func (p parameters) checkParametersValue() {
+func (p *parameters) checkParameters() {
 	if p.offset.isEmpty() {
 		p.offset.setToDefault()
 	}
@@ -98,8 +98,8 @@ func (p parameters) checkParametersValue() {
 
 type offset string
 
-func (o offset) setToDefault() {
-	o = tmrkDefOffset
+func (o *offset) setToDefault() {
+	*o = tmrkDefOffset
 }
 
 func (o offset) isEmpty() bool {
@@ -108,8 +108,8 @@ func (o offset) isEmpty() bool {
 
 type limit string
 
-func (l limit) setToDefault() {
-	l = tmrkDefLimit
+func (l *limit) setToDefault() {
+	*l = tmrkDefLimit
 }
 
 func (l limit) isEmpty() bool {
