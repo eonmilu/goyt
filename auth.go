@@ -19,34 +19,57 @@ type Auth struct {
 // Auth gets the token from the HTTPS POST, validates it
 // and overrides the past token from the database
 func (y YourTime) Auth(w http.ResponseWriter, r *http.Request) {
-	client := &http.Client{}
+	token := getToken(r)
+
+	if token.isLegit(y) {
+		// TODO: insert gv.Sub to the users table
+		fmt.Fprintf(w, string(token))
+	} else {
+		fmt.Fprintf(w, sCError)
+	}
+}
+
+type token string
+
+func (t token) isLegit(y YourTime) bool {
+	legit, err := t.validate(y)
+	if err != nil {
+		log.Printf("%s", err)
+		return false
+	}
+	return legit
+}
+
+func getToken(r *http.Request) token {
 	r.ParseForm()
-	token := r.Form["idtoken"][0]
-	payload := url.Values{}
-	payload.Add("id_token", token)
-	// Validate the token
+	return token(r.Form["idtoken"][0])
+}
+
+func (t token) validate(y YourTime) (bool, error) {
+	var (
+		client  *http.Client
+		payload url.Values
+	)
+	payload.Add("id_token", string(t))
+
 	req, err := http.NewRequest("GET", y.AuthTokenURL+payload.Encode(), nil)
 	if err != nil {
-		log.Printf("TOKEN ERROR: %s", err)
-		return
+		log.Printf("%s", err)
+		return false, err
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("TOKEN ERROR: %s", err)
-		return
+		log.Printf("%s", err)
+		return false, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	gv := &Auth{}
 	err = json.Unmarshal(body, &gv)
 	if err != nil {
-		log.Printf("TOKEN ERROR: %s", err)
-		return
+		log.Printf("%s", err)
+		return false, err
 	}
 	// If both Aud is from the Your Time client ID and Sub contains anything then the login was succesful
-	if gv.Aud == y.GoogleClientID && gv.Sub != "" {
-		// TODO: insert gv.Sub to the users table
-		// Write token
-		fmt.Fprintf(w, gv.Sub)
-	}
+	return gv.Aud == y.GoogleClientID && gv.Sub != "", nil
 }
