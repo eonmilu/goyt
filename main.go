@@ -3,6 +3,7 @@ package goyt
 import (
 	"database/sql"
 
+	// Init the postgres' drivers
 	_ "github.com/lib/pq"
 )
 
