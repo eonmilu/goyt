@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // Auth is the unmarshaled data structure AuthTokenURL returns
@@ -47,8 +48,10 @@ func getToken(r *http.Request) token {
 
 func (t token) validate(y YourTime) (bool, error) {
 	var (
-		client  *http.Client
-		payload url.Values
+		client = http.Client{
+			Timeout: 5 * time.Second,
+		}
+		payload = url.Values{}
 	)
 	payload.Add("id_token", string(t))
 
