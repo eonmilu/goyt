@@ -1,7 +1,6 @@
 package goyt
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -39,16 +38,6 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, sCFound+string(s))
-}
-
-// EnableCORS edits the response headers to allow CORS from any source
-func EnableCORS(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-type timemarksDB struct {
-	*sql.DB
 }
 
 func (tdb timemarksDB) getTimemarks(params parameters) ([]Timemark, error) {
