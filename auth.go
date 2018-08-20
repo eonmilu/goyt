@@ -74,5 +74,7 @@ func (t token) validate(y YourTime) (bool, error) {
 		return false, err
 	}
 	// If both Aud is from the Your Time client ID and Sub contains anything then the login was succesful
-	return gv.Aud == y.GoogleClientID && gv.Sub != "", nil
+	ok := gv.Aud == y.GoogleClientID && gv.Sub != ""
+
+	return ok, nil
 }
