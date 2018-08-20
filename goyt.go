@@ -11,6 +11,7 @@ const (
 	sCFound    = "200"
 	sCNotFound = "210"
 	sCError    = "220"
+	sCBadLogin = "230"
 )
 
 const (
@@ -39,6 +40,22 @@ type Timemark struct {
 	Content    string `json:"content"`
 	Votes      int64  `json:"votes"`
 	Date       int64  `json:"date"`
+}
+
+// User contains information on a user
+type User struct {
+	id    int32
+	token string
+	email string
+	auth  auth
+}
+
+// Auth is the unmarshaled data structure AuthTokenURL returns
+// We will only declare the types we are going to use (aud, sub, email)
+type auth struct {
+	Aud   string `json:"aud"`
+	Sub   string `json:"sub"`
+	Email string `json:"email"`
 }
 
 type timemarksDB struct {
