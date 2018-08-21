@@ -46,13 +46,8 @@ type Timemark struct {
 type User struct {
 	id    int32
 	token string
-	email string
-	auth  auth
-}
-
-// Auth is the unmarshaled data structure AuthTokenURL returns
-// We will only declare the types we are going to use (aud, sub, email)
-type auth struct {
+	// Auth is the unmarshaled data structure AuthTokenURL returns
+	// We will only declare the types we are going to use (aud, sub, email)
 	Aud   string `json:"aud"`
 	Sub   string `json:"sub"`
 	Email string `json:"email"`
