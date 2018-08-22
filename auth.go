@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-// Auth gets the token from the HTTPS POST, validates it
+// ValidateAuth gets the token from the HTTPS POST, validates it
 // and overrides the past token from the database
-func (y YourTime) Auth(w http.ResponseWriter, r *http.Request) {
+func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	r.ParseForm()
 	token := getToken(r)
