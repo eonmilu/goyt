@@ -82,7 +82,10 @@ func (y YourTime) handleExistingUser(user User) error {
 type token string
 
 func getToken(r *http.Request) token {
-	return token(r.Form["idtoken"][0])
+	if len(r.Form["idtoken"]) > 0 {
+		return token(r.Form["idtoken"][0])
+	}
+	return ""
 }
 
 func (t token) GetIfLegit(y YourTime, user *User) (bool, error) {
