@@ -18,4 +18,5 @@ func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, sCError)
 		return
 	}
+	fmt.Fprintf(w, sCOK)
 }
