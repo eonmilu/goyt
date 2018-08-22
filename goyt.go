@@ -12,6 +12,7 @@ const (
 	sCNotFound = "210"
 	sCError    = "220"
 	sCBadLogin = "230"
+	sCOK       = "240"
 )
 
 const (
