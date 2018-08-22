@@ -27,14 +27,23 @@ func (y YourTime) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isNewUser, err := timemarksDB{y.DB}.userExists(user)
+	user.token = string(token)
+
+	isExistingUser, err := timemarksDB{y.DB}.userExists(user)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		log.Printf("%s", err)
 		return
 	}
 
-	if isNewUser {
+	if isExistingUser {
+		err = y.handleExistingUser(user)
+		if err != nil {
+			log.Printf("%s", err)
+			fmt.Fprintf(w, sCError)
+			return
+		}
+	} else {
 		err = y.handleNewUser(user)
 		log.Printf("Creating")
 		if err != nil {
@@ -42,15 +51,7 @@ func (y YourTime) Auth(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, sCError)
 			return
 		}
-	} else {
-		err = y.handleExistingUser(user)
-		if err != nil {
-			log.Printf("%s", err)
-			fmt.Fprintf(w, sCError)
-			return
-		}
 	}
-
 	fmt.Fprintf(w, string(token))
 }
 
@@ -86,7 +87,6 @@ func getToken(r *http.Request) token {
 
 func (t token) GetIfLegit(y YourTime, user *User) (bool, error) {
 	err := y.getUserData(t, user)
-	log.Printf("%s\n%d\n%s", user.Email, user.id, user.token)
 	if err != nil {
 		log.Printf("%s", err)
 		return false, err
