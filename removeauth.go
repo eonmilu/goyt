@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // RemoveAuth reads a token passed by HTTPS POST and changes the DB's entry
@@ -21,5 +22,13 @@ func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, sCError)
 		return
 	}
+
+	cookie := http.Cookie{
+		Name:    "yourtime-token-server",
+		Value:   string(token),
+		Expires: time.Now().Add(32 * 365 * 24 * time.Hour),
+		Secure:  true,
+	}
+	http.SetCookie(w, &cookie)
 	fmt.Fprintf(w, sCOK)
 }
