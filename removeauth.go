@@ -12,6 +12,8 @@ import (
 // RemoveAuth reads a token passed by HTTPS POST and changes the DB's entry
 // to an empty string
 func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
+	EnableCORS(w)
+
 	cookies := r.Header.Get("Cookie")
 	re := regexp.MustCompile(`(?m)yourtime-token-server=.*[^\]|;]`)
 	token := strings.Split(re.FindAllString(cookies, 1)[0], "=")[1]
