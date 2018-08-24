@@ -27,8 +27,8 @@ func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
 
 	cookie := http.Cookie{
 		Name:    "yourtime-token-server",
-		Value:   string(token),
-		Expires: time.Now().Add(32 * 365 * 24 * time.Hour),
+		Value:   "",
+		Expires: time.Unix(0, 0),
 		Secure:  true,
 	}
 	http.SetCookie(w, &cookie)
