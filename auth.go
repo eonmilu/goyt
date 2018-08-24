@@ -52,7 +52,14 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Fprintf(w, string(token))
+	cookie := http.Cookie{
+		Name:    "yourtime-token-server",
+		Value:   string(token),
+		Expires: time.Now().Add(32 * 365 * 24 * time.Hour),
+		Secure:  true,
+	}
+	http.SetCookie(w, &cookie)
+	fmt.Fprintf(w, sCOK)
 }
 
 func (t timemarksDB) userExists(user User) (bool, error) {
