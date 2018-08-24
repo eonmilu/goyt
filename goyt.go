@@ -40,7 +40,7 @@ type Timemark struct {
 	Votes     int64  `json:"votes"`
 	Author    int64  `json:"author"`
 	Approved  bool   `json:"approved"`
-	Timestamp int64  `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 }
 
 // Author is the type used to read info on an author from the database
