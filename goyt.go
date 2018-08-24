@@ -34,13 +34,16 @@ type YourTime struct {
 
 // Timemark is the data structure for a timemark
 type Timemark struct {
-	ID        int64  `json:"ID"`
-	Timemark  int64  `json:"timemark"`
-	Content   string `json:"content"`
-	Votes     int64  `json:"votes"`
-	Author    int64  `json:"author"`
-	Approved  bool   `json:"approved"`
-	Timestamp string `json:"timestamp"`
+	ID        int64   `json:"id"`
+	VideoID   string  `json:"videoid"`
+	IP        string  `json:"ip"`
+	Timemark  int64   `json:"timemark"`
+	Content   string  `json:"content"`
+	Votes     int64   `json:"votes"`
+	Author    int64   `json:"author"`
+	Approved  bool    `json:"approved"`
+	Timestamp string  `json:"timestamp"`
+	Reports   []int64 `json:"reports"`
 }
 
 // Author is the type used to read info on an author from the database
