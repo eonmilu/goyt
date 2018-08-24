@@ -45,13 +45,14 @@ func (tdb timemarksDB) getTimemarks(params parameters) ([]Timemark, error) {
 		t Timemark
 		p []Timemark
 	)
-	rows, err := tdb.Query("SELECT id, author, timemark, content, votes, date FROM timemarks WHERE videoid = $1 ORDER BY votes OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
+	rows, err := tdb.Query("SELECT id, timemark, content, votes, author, approved, timestamp FROM timemarks WHERE videoid = $1 ORDER BY votes OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		err = rows.Scan(&t.TimemarkID, &t.Author, &t.Timemark, &t.Content, &t.Votes, &t.Date)
+		t = Timemark{}
+		err = rows.Scan(&t.ID, &t.Timemark, &t.Content, &t.Votes, &t.Author, &t.Approved, &t.Timestamp)
 		p = append(p, t)
 		if err != nil {
 			return nil, err
