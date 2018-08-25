@@ -3,9 +3,9 @@ package goyt
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // Insert TODO:
@@ -15,11 +15,11 @@ func (y YourTime) Insert(w http.ResponseWriter, r *http.Request) {
 	t, err := y.getParameters(r)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
+		fmt.Printf("%s", err)
 		return
 	}
 
-	log.Printf("%v", t)
-	_, err = y.DB.Exec("INSERT INTO timemarks VALUES (DEFAULT, $1, $2, $3, $4, DEFAULT, $5, DEFAULT, DEFAULT, DEFAULT)", t.ID, t.IP, t.Timemark, t.Content, t.Author)
+	_, err = y.DB.Exec("INSERT INTO timemarks VALUES (DEFAULT, $1, $2, $3, $4, DEFAULT, $5, DEFAULT, DEFAULT, DEFAULT)", t.VideoID, t.IP, t.Timemark, t.Content, t.Author)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -50,7 +50,7 @@ func (y YourTime) getParameters(r *http.Request) (Timemark, error) {
 
 	t = Timemark{
 		VideoID:  videoID,
-		IP:       r.RemoteAddr,
+		IP:       strings.Split(r.RemoteAddr, ":")[0],
 		Timemark: timemark,
 		Content:  content,
 		Author:   author,
@@ -92,9 +92,9 @@ func (y YourTime) getAuthor(r *http.Request) (int64, error) {
 	if token == "" {
 		return id, nil
 	}
-	rows, err := y.DB.Query("SELECT id FROM users WHERE token=$1")
+	rows, err := y.DB.Query("SELECT id FROM users WHERE token=$1", token)
 	if err != nil {
-		return id, nil
+		return id, err
 	}
 	if rows.Next() {
 		err = rows.Scan(&id)
