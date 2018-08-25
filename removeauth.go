@@ -14,11 +14,9 @@ import (
 func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
 	EnableCORS(w)
 
-	cookies := r.Header.Get("Cookie")
-	re := regexp.MustCompile(`(?m)yourtime-token-server=.*[^\]|;]`)
-	token := strings.Split(re.FindAllString(cookies, 1)[0], "=")[1]
+	token := getTokenFromCookies(r)
 
-	_, err := y.DB.Exec("UPDATE users SET token=$1 WHERE token=$2", "", token)
+	_, err := y.DB.Exec("UPDATE users SET token=$1 WHERE token=$2", "", string(token))
 	if err != nil {
 		log.Printf("%s", err)
 		fmt.Fprintf(w, sCError)
@@ -33,4 +31,12 @@ func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 	fmt.Fprintf(w, sCOK)
+}
+
+func getTokenFromCookies(r *http.Request) token {
+	cookies := r.Header.Get("Cookie")
+	re := regexp.MustCompile(`(?m)yourtime-token-server=.*[^\]|;]`)
+	tkn := strings.Split(re.FindAllString(cookies, 1)[0], "=")[1]
+
+	return token(tkn)
 }
