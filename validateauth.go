@@ -47,7 +47,6 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		err = y.handleNewUser(user)
-		log.Printf("Creating")
 		if err != nil {
 			log.Printf("%s", err)
 			fmt.Fprintf(w, sCError)
@@ -56,6 +55,7 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	cookie := http.Cookie{
 		Name:    "yourtime-token-server",
+		Path:    "/",
 		Value:   string(token),
 		Expires: time.Now().Add(32 * 365 * 24 * time.Hour),
 		Secure:  true,
