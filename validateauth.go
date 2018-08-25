@@ -31,7 +31,7 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 
 	user.token = string(token)
 
-	isExistingUser, err := timemarksDB{y.DB}.userExists(user)
+	isExistingUser, err := timemarksDB{y.DB}.userExistsByEmail(user.Email)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		log.Printf("%s", err)
@@ -64,9 +64,9 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCOK)
 }
 
-func (t timemarksDB) userExists(user User) (bool, error) {
+func (t timemarksDB) userExistsByEmail(email string) (bool, error) {
 	result := false
-	rows, err := t.Query("SELECT exists(SELECT 1 FROM users WHERE email=$1)", user.Email)
+	rows, err := t.Query("SELECT exists(SELECT 1 FROM users WHERE email=$1)", email)
 	if err != nil {
 		return false, err
 	}
