@@ -45,7 +45,7 @@ func (tdb timemarksDB) getTimemarks(params parameters) ([]Timemark, error) {
 		t Timemark
 		p []Timemark
 	)
-	rows, err := tdb.Query("SELECT id, timemark, content, votes, author, approved, timestamp FROM timemarks WHERE videoid = $1 ORDER BY votes OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
+	rows, err := tdb.Query("SELECT id, timemark, content, votes, author, approved, timestamp FROM timemarks WHERE videoid = $1 ORDER BY votes DESC OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
 	if err != nil {
 		return nil, err
 	}
