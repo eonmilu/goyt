@@ -12,7 +12,7 @@ import (
 func (y YourTime) Insert(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	t, err := y.getParameters(r)
+	t, err := y.getInsertParameters(r)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -28,7 +28,7 @@ func (y YourTime) Insert(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCOK)
 }
 
-func (y YourTime) getParameters(r *http.Request) (Timemark, error) {
+func (y YourTime) getInsertParameters(r *http.Request) (Timemark, error) {
 	t := Timemark{}
 
 	videoID, err := getVideoID(r)
