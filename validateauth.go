@@ -75,6 +75,9 @@ func (t timemarksDB) userExistsByIdentifier(identifier string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	if rows.Err() != nil {
+		return false, rows.Err()
+	}
 	return result, nil
 }
 
