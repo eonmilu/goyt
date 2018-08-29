@@ -31,7 +31,7 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 
 	user.token = string(token)
 
-	isExistingUser, err := timemarksDB{y.DB}.userExistsByEmail(user.Email)
+	isExistingUser, err := timemarksDB{y.DB}.userExistsByIdentifier(user.Identifier)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		log.Printf("%s", err)
@@ -64,9 +64,9 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCOK)
 }
 
-func (t timemarksDB) userExistsByEmail(email string) (bool, error) {
+func (t timemarksDB) userExistsByIdentifier(identifier string) (bool, error) {
 	result := false
-	rows, err := t.Query("SELECT exists(SELECT 1 FROM users WHERE email=$1)", email)
+	rows, err := t.Query("SELECT exists(SELECT 1 FROM users WHERE identifier=$1)", identifier)
 	if err != nil {
 		return false, err
 	}
@@ -79,12 +79,12 @@ func (t timemarksDB) userExistsByEmail(email string) (bool, error) {
 }
 
 func (y YourTime) handleNewUser(user User) error {
-	_, err := y.DB.Exec("INSERT INTO users (token, email) VALUES ($1, $2)", user.token, user.Email)
+	_, err := y.DB.Exec("INSERT INTO users (token, identifier) VALUES ($1, $2)", user.token, user.Identifier)
 	return err
 }
 
 func (y YourTime) handleExistingUser(user User) error {
-	_, err := y.DB.Exec("UPDATE users SET token=$1 WHERE email=$2", user.token, user.Email)
+	_, err := y.DB.Exec("UPDATE users SET token=$1 WHERE identifier=$2", user.token, user.Identifier)
 	return err
 }
 
