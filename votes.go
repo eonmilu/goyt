@@ -3,6 +3,7 @@ package goyt
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -12,7 +13,8 @@ import (
 func (y YourTime) Votes(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	params, err := getVoteParameters(r)
+	params, err := y.getVoteParameters(r)
+	log.Printf("%v", params)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -65,33 +67,44 @@ func (y YourTime) handleVoteAction(v vote) error {
 
 func (y YourTime) upvote(v vote) error {
 	// Set the upvote in the user's profile
-	_, err := y.DB.Exec("UPDATE users SET upvotes= upvotes || '{$1}' where identifier=$2", v.ID, v.Identifier)
+	_, err := y.DB.Exec("UPDATE users SET upvotes= upvotes || '{"+strconv.FormatInt(v.ID, 10)+"}' where identifier=$1", v.Identifier)
+	log.Println("1")
 	if err != nil {
 		return err
 	}
 	// Remove possible downvote
 	_, err = y.DB.Exec("UPDATE users SET downvotes= array_remove(downvotes, $1) where identifier=$2", v.ID, v.Identifier)
+	log.Println("2")
+
 	if err != nil {
 		return err
 	}
 	// Change the timemark's votes
 	_, err = y.DB.Exec("UPDATE timemarks SET votes= votes + 1 where id=$1", v.ID)
+	log.Println("3")
+
 	return err
 }
 
 func (y YourTime) downvote(v vote) error {
 	// Set the downvote in the user's profile
-	_, err := y.DB.Exec("UPDATE users SET downvotes= downvotes || '{$1}' where identifier=$2", v.ID, v.Identifier)
+	_, err := y.DB.Exec("UPDATE users SET downvotes= downvotes || '{"+strconv.FormatInt(v.ID, 10)+"}' where identifier=$1", v.Identifier)
+	log.Println("4")
+
 	if err != nil {
 		return err
 	}
 	// Remove possible upvote
 	_, err = y.DB.Exec("UPDATE users SET upvotes= array_remove(upvotes, $1) where identifier=$2", v.ID, v.Identifier)
+	log.Println("5")
+
 	if err != nil {
 		return err
 	}
 	// Change the timemark's votes
 	_, err = y.DB.Exec("UPDATE timemarks SET votes= votes - 1 where id=$1", v.ID)
+	log.Println("6")
+
 	return err
 }
 
@@ -108,27 +121,41 @@ func (y YourTime) unsetVote(v vote) error {
 	}
 	if unsetUpvote {
 		_, err := y.DB.Exec("UPDATE users SET upvotes=array_remove(upvotes, $1)", v.ID)
+		log.Println("7")
+
 		if err != nil {
 			return err
 		}
 		// Change the timemark's votes
 		_, err = y.DB.Exec("UPDATE timemarks SET votes= votes - 1 where id=$1", v.ID)
+		log.Println("8")
+
 	} else if unsetDownvote {
 		_, err := y.DB.Exec("UPDATE users SET downvotes=array_remove(downvotes, $1)", v.ID)
+		log.Println("9")
+
 		if err != nil {
 			return err
 		}
 		// Change the timemark's votes
 		_, err = y.DB.Exec("UPDATE timemarks SET votes= votes + 1 where id=$1", v.ID)
+		log.Println("10")
+
 	}
 	return nil
 }
 
 func (y YourTime) hasUpvoted(v vote) (bool, error) {
-	rows, err := y.DB.Query("SELECT '{$1}' = ANY(select upvotes from users where identifier=$2)", v.ID, v.Identifier)
+	// TODO: dangerous unsanitized integer in statement.
+	// This is because lib/pq does not support arrays in statements
+	rows, err := y.DB.Query("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}'= ANY(select upvotes from users where identifier=$1)", v.Identifier)
+	log.Println("11")
+
 	if err != nil {
 		return false, err
 	}
+	log.Println("011")
+
 	isUpvoted := false
 	rows.Next()
 	err = rows.Scan(&isUpvoted)
@@ -142,10 +169,13 @@ func (y YourTime) hasUpvoted(v vote) (bool, error) {
 }
 
 func (y YourTime) hasDownvoted(v vote) (bool, error) {
-	rows, err := y.DB.Query("SELECT '{$1}' = ANY(select downvotes from users where identifier=$2)", v.ID, v.Identifier)
+	rows, err := y.DB.Query("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}' = ANY(select downvotes from users where identifier=$1)", v.Identifier)
+	log.Println("12")
+
 	if err != nil {
 		return false, err
 	}
+	log.Println("012")
 	isDownvoted := false
 	rows.Next()
 	err = rows.Scan(&isDownvoted)
@@ -158,7 +188,7 @@ func (y YourTime) hasDownvoted(v vote) (bool, error) {
 	return isDownvoted, nil
 }
 
-func getVoteParameters(r *http.Request) (vote, error) {
+func (y YourTime) getVoteParameters(r *http.Request) (vote, error) {
 	v := vote{}
 
 	id, err := getTimemarkIDFromPost(r)
@@ -171,7 +201,10 @@ func getVoteParameters(r *http.Request) (vote, error) {
 		return v, err
 	}
 
-	identifier := getUserIdentifier(r)
+	identifier, err := y.getUserIdentifier(r)
+	if err != nil {
+		return v, err
+	}
 
 	v = vote{
 		ID:         id,
@@ -182,13 +215,27 @@ func getVoteParameters(r *http.Request) (vote, error) {
 	return v, nil
 }
 
-func getUserIdentifier(r *http.Request) string {
-	identifier := string(getTokenFromCookies(r))
-	if identifier == "" {
-		identifier = r.RemoteAddr
-		return identifier
+func (y YourTime) getUserIdentifier(r *http.Request) (string, error) {
+	tkn := getTokenFromCookies(r)
+	if tkn == "" {
+		return r.RemoteAddr, nil
 	}
-	return identifier
+
+	email, err := y.getEmailFromToken(tkn)
+	if err != nil {
+		return r.RemoteAddr, err
+	}
+	return email, nil
+}
+
+func (y YourTime) getEmailFromToken(tkn token) (string, error) {
+	email := ""
+	row := y.DB.QueryRow("SELECT email FROM users WHERE token=$1", string(tkn))
+	err := row.Scan(&email)
+	if err != nil {
+		return "", err
+	}
+	return email, nil
 }
 
 const (
