@@ -8,6 +8,12 @@ import (
 	"strconv"
 )
 
+const (
+	actionUpvote   = "upvoted"
+	actionUnset    = "unset"
+	actionDownvote = "downvoted"
+)
+
 // Votes reads the parameters supplied by HTTPS POST (id, action)
 // and then modifies the timemarks' votes given the action
 func (y YourTime) Votes(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +43,8 @@ func (y YourTime) handleVoteAction(v vote) error {
 		if err != nil {
 			return err
 		}
-		if hasUpvoted {
+		log.Println(hasUpvoted)
+		if !hasUpvoted {
 			err := y.upvote(v)
 			if err != nil {
 				return err
@@ -49,7 +56,7 @@ func (y YourTime) handleVoteAction(v vote) error {
 		if err != nil {
 			return err
 		}
-		if hasDownvoted {
+		if !hasDownvoted {
 			err := y.downvote(v)
 			if err != nil {
 				return err
@@ -155,6 +162,7 @@ func (y YourTime) hasUpvoted(v vote) (bool, error) {
 
 	isUpvoted := false
 	err := row.Scan(&isUpvoted)
+	log.Printf("%t", isUpvoted)
 	return isUpvoted, err
 }
 
@@ -217,12 +225,6 @@ func (y YourTime) getEmailFromToken(tkn token) (string, error) {
 	}
 	return email, nil
 }
-
-const (
-	actionUpvote   = "upvote"
-	actionUnset    = "unset"
-	actionDownvote = "downvote"
-)
 
 type vote struct {
 	ID         int64
