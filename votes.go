@@ -148,44 +148,24 @@ func (y YourTime) unsetVote(v vote) error {
 func (y YourTime) hasUpvoted(v vote) (bool, error) {
 	// TODO: dangerous unsanitized integer in statement.
 	// This is because lib/pq does not support arrays in statements
-	rows, err := y.DB.Query("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}'= ANY(select upvotes from users where identifier=$1)", v.Identifier)
+	row := y.DB.QueryRow("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}'= ANY(select upvotes from users where identifier=$1)", v.Identifier)
 	log.Println("11")
 
-	if err != nil {
-		return false, err
-	}
 	log.Println("011")
 
 	isUpvoted := false
-	rows.Next()
-	err = rows.Scan(&isUpvoted)
-	if err != nil {
-		return false, err
-	}
-	if rows.Err() != nil {
-		return false, rows.Err()
-	}
-	return isUpvoted, nil
+	err := row.Scan(&isUpvoted)
+	return isUpvoted, err
 }
 
 func (y YourTime) hasDownvoted(v vote) (bool, error) {
-	rows, err := y.DB.Query("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}' = ANY(select downvotes from users where identifier=$1)", v.Identifier)
+	row := y.DB.QueryRow("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}' = ANY(select downvotes from users where identifier=$1)", v.Identifier)
 	log.Println("12")
 
-	if err != nil {
-		return false, err
-	}
 	log.Println("012")
 	isDownvoted := false
-	rows.Next()
-	err = rows.Scan(&isDownvoted)
-	if err != nil {
-		return false, err
-	}
-	if rows.Err() != nil {
-		return false, rows.Err()
-	}
-	return isDownvoted, nil
+	err := row.Scan(&isDownvoted)
+	return isDownvoted, err
 }
 
 func (y YourTime) getVoteParameters(r *http.Request) (vote, error) {

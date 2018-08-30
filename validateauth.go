@@ -66,19 +66,9 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 
 func (t timemarksDB) userExistsByIdentifier(identifier string) (bool, error) {
 	result := false
-	rows, err := t.Query("SELECT exists(SELECT 1 FROM users WHERE identifier=$1)", identifier)
-	if err != nil {
-		return false, err
-	}
-	rows.Next()
-	err = rows.Scan(&result)
-	if err != nil {
-		return false, err
-	}
-	if rows.Err() != nil {
-		return false, rows.Err()
-	}
-	return result, nil
+	row := t.QueryRow("SELECT exists(SELECT 1 FROM users WHERE identifier=$1)", identifier)
+	err := row.Scan(&result)
+	return result, err
 }
 
 func (y YourTime) handleNewUser(user User) error {

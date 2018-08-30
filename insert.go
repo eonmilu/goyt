@@ -92,30 +92,19 @@ func (y YourTime) getAuthor(r *http.Request) (int64, error) {
 	if token == "" {
 		return id, nil
 	}
-	rows, err := y.DB.Query("SELECT id FROM users WHERE token=$1", token)
+	row := y.DB.QueryRow("SELECT id FROM users WHERE token=$1", token)
+	err := row.Scan(&id)
+
 	if err != nil {
 		return id, err
-	}
-	if rows.Next() {
-		err = rows.Scan(&id)
-		return id, nil
-	}
-	if rows.Err() != nil {
-		return id, rows.Err()
 	}
 	return id, nil
 }
 
 func (t timemarksDB) userExistsByToken(token token) (bool, error) {
 	result := false
-	rows, err := t.Query("SELECT exists(SELECT 1 FROM users WHERE token=$1)", token)
-	if err != nil {
-		return false, err
-	}
-	rows.Next()
-	err = rows.Scan(&result)
-	if err != nil {
-		return false, err
-	}
-	return result, nil
+	row := t.QueryRow("SELECT exists(SELECT 1 FROM users WHERE token=$1)", token)
+	err := row.Scan(&result)
+
+	return result, err
 }
