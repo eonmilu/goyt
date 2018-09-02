@@ -23,9 +23,9 @@ You will need a database with the fields:
 
 ```go
 yourtime = goyt.YourTime{
-	AuthTokenURL:   YOUR_GOOGLE_AUTH_TOKEN_URL,
-	GoogleClientID: YOUR_GOOGLE_AUTH_CLIENT_ID,
-	DB:             YOUR_DATABASE,
+    AuthTokenURL:   YOUR_GOOGLE_AUTH_TOKEN_URL,
+    GoogleClientID: YOUR_GOOGLE_AUTH_CLIENT_ID,
+    DB:             YOUR_DATABASE,
 }
 
 
