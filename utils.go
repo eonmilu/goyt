@@ -11,20 +11,23 @@ func EnableCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-// Middleware tries to identify the user. If it fails, it creates a new one
-func (y YourTime) Middleware(h http.Handler) http.Handler {
+// CreateUsers tries to identify the user. If it fails, it creates a new one
+func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userExists, err := timemarksDB{y.DB}.userExistsByToken(getTokenFromCookies(r))
-		if err != nil {
-			fmt.Fprintf(w, sCError)
-			fmt.Printf("%s", err)
-			return
-		}
-		if userExists {
-			return
+		tkn := getTokenFromCookies(r)
+		if tkn != "" {
+			userExists, err := timemarksDB{y.DB}.userExistsByToken(tkn)
+			if err != nil {
+				fmt.Fprintf(w, sCError)
+				fmt.Printf("%s", err)
+				return
+			}
+			if userExists {
+				return
+			}
 		}
 
-		userExists, err = timemarksDB{y.DB}.userExistsByIdentifier(r.RemoteAddr)
+		userExists, err := timemarksDB{y.DB}.userExistsByIdentifier(r.RemoteAddr)
 		if err != nil {
 			fmt.Fprintf(w, sCError)
 			fmt.Printf("%s", err)
@@ -44,6 +47,7 @@ func (y YourTime) Middleware(h http.Handler) http.Handler {
 			return
 		}
 
-		h.ServeHTTP(w, r)
+		// Pass to the next function
+		h(w, r)
 	})
 }

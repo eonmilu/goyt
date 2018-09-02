@@ -31,27 +31,11 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 
 	user.token = string(token)
 
-	isExistingUser, err := timemarksDB{y.DB}.userExistsByIdentifier(user.Identifier)
+	err = y.handleExistingUser(user)
 	if err != nil {
-		fmt.Fprintf(w, sCError)
 		log.Printf("%s", err)
+		fmt.Fprintf(w, sCError)
 		return
-	}
-
-	if isExistingUser {
-		err = y.handleExistingUser(user)
-		if err != nil {
-			log.Printf("%s", err)
-			fmt.Fprintf(w, sCError)
-			return
-		}
-	} else {
-		err = y.handleNewUser(user)
-		if err != nil {
-			log.Printf("%s", err)
-			fmt.Fprintf(w, sCError)
-			return
-		}
 	}
 	cookie := http.Cookie{
 		Name:    "yourtime-token-server",
