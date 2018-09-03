@@ -22,6 +22,7 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	isLegit, err := token.GetIfLegit(y, &user)
 	if err != nil {
 		log.Printf("%s", err)
+		fmt.Fprintf(w, sCError)
 		return
 	}
 	if !isLegit {
