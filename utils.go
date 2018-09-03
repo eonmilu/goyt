@@ -17,7 +17,7 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tkn := getTokenFromCookies(r)
 		if tkn != "" {
-			userExists, err := timemarksDB{y.DB}.userExistsByToken(tkn)
+			userExists, err := y.userExistsByToken(tkn)
 			if err != nil {
 				fmt.Fprintf(w, sCError)
 				fmt.Printf("%s", err)
@@ -31,7 +31,7 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		trueAddr := strings.Split(r.RemoteAddr, ":")[0]
-		userExists, err := timemarksDB{y.DB}.userExistsByIdentifier(trueAddr)
+		userExists, err := y.userExistsByIdentifier(trueAddr)
 		if err != nil {
 			fmt.Fprintf(w, sCError)
 			fmt.Printf("%s", err)

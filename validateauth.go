@@ -49,9 +49,9 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCOK)
 }
 
-func (t timemarksDB) userExistsByIdentifier(identifier string) (bool, error) {
+func (y YourTime) userExistsByIdentifier(identifier string) (bool, error) {
 	result := false
-	row := t.QueryRow("SELECT exists(SELECT 1 FROM users WHERE identifier=$1)", identifier)
+	row := y.DB.QueryRow("SELECT exists(SELECT 1 FROM users WHERE identifier=$1)", identifier)
 	err := row.Scan(&result)
 	return result, err
 }
