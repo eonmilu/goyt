@@ -23,6 +23,8 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 			if userExists {
+				// Pass to the next function
+				h(w, r)
 				return
 			}
 		}
@@ -34,6 +36,9 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		if userExists {
+			// Pass to the next function
+			h(w, r)
+
 			return
 		}
 
