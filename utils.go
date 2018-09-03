@@ -3,6 +3,7 @@ package goyt
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // EnableCORS edits the response headers to allow CORS from any source
@@ -29,7 +30,8 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		userExists, err := timemarksDB{y.DB}.userExistsByIdentifier(r.RemoteAddr)
+		trueAddr := strings.Split(r.RemoteAddr, ":")[0]
+		userExists, err := timemarksDB{y.DB}.userExistsByIdentifier(trueAddr)
 		if err != nil {
 			fmt.Fprintf(w, sCError)
 			fmt.Printf("%s", err)
@@ -44,7 +46,7 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 
 		// If there is no record of the user, create one
 		err = y.handleNewUser(User{
-			Identifier: r.RemoteAddr,
+			Identifier: trueAddr,
 		})
 		if err != nil {
 			fmt.Fprintf(w, sCError)
