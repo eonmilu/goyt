@@ -47,9 +47,7 @@ func (y YourTime) handleVoteAction(v vote) error {
 		log.Println(hasUpvoted)
 		if !hasUpvoted {
 			err := y.upvote(v)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 		break
 	case actionDownvote:
@@ -59,23 +57,23 @@ func (y YourTime) handleVoteAction(v vote) error {
 		}
 		if !hasDownvoted {
 			err := y.downvote(v)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 		break
 	case actionUnset:
 		err := y.unsetVote(v)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	return nil
 }
 
 func (y YourTime) upvote(v vote) error {
+	// TODO: dangerous unsanitized integer in statement.
+	// This is because lib/pq does not support arrays in statements
+	stmt := fmt.Sprintf("UPDATE users SET upvotes= upvotes || '{%d}' where identifier=$1", v.ID)
+
 	// Set the upvote in the user's profile
-	_, err := y.DB.Exec("UPDATE users SET upvotes= upvotes || '{"+strconv.FormatInt(v.ID, 10)+"}' where identifier=$1", v.Identifier)
+	_, err := y.DB.Exec(stmt, v.Identifier)
 	log.Println("1")
 	if err != nil {
 		return err
@@ -95,8 +93,12 @@ func (y YourTime) upvote(v vote) error {
 }
 
 func (y YourTime) downvote(v vote) error {
+	// TODO: dangerous unsanitized integer in statement.
+	// This is because lib/pq does not support arrays in statements
+	stmt := fmt.Sprintf("UPDATE users SET downvotes= downvotes || '{%d}' where identifier=$1", v.ID)
+
 	// Set the downvote in the user's profile
-	_, err := y.DB.Exec("UPDATE users SET downvotes= downvotes || '{"+strconv.FormatInt(v.ID, 10)+"}' where identifier=$1", v.Identifier)
+	_, err := y.DB.Exec(stmt, v.Identifier)
 	log.Println("4")
 
 	if err != nil {
@@ -156,7 +158,9 @@ func (y YourTime) unsetVote(v vote) error {
 func (y YourTime) hasUpvoted(v vote) (bool, error) {
 	// TODO: dangerous unsanitized integer in statement.
 	// This is because lib/pq does not support arrays in statements
-	row := y.DB.QueryRow("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}'= ANY(select upvotes from users where identifier=$1)", v.Identifier)
+	stmt := fmt.Sprintf("SELECT '{%d}'= ANY(select upvotes from users where identifier=$1)", v.ID)
+
+	row := y.DB.QueryRow(stmt, v.Identifier)
 	log.Println("11")
 
 	log.Println("011")
@@ -168,7 +172,11 @@ func (y YourTime) hasUpvoted(v vote) (bool, error) {
 }
 
 func (y YourTime) hasDownvoted(v vote) (bool, error) {
-	row := y.DB.QueryRow("SELECT '{"+strconv.FormatInt(v.ID, 10)+"}' = ANY(select downvotes from users where identifier=$1)", v.Identifier)
+	// TODO: dangerous unsanitized integer in statement.
+	// This is because lib/pq does not support arrays in statements
+	stmt := fmt.Sprintf("SELECT '{%d}' = ANY(select downvotes from users where identifier=$1)", v.ID)
+
+	row := y.DB.QueryRow(stmt, v.Identifier)
 	log.Println("12")
 
 	log.Println("012")
