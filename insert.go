@@ -101,9 +101,9 @@ func (y YourTime) getAuthor(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (t timemarksDB) userExistsByToken(token token) (bool, error) {
+func (y YourTime) userExistsByToken(token token) (bool, error) {
 	result := false
-	row := t.QueryRow("SELECT exists(SELECT 1 FROM users WHERE token=$1)", token)
+	row := y.DB.QueryRow("SELECT exists(SELECT 1 FROM users WHERE token=$1)", token)
 	err := row.Scan(&result)
 
 	return result, err

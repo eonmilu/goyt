@@ -18,7 +18,7 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	}
 	params.checkParameters()
 
-	p, err := timemarksDB{y.DB}.getTimemarks(params)
+	p, err := y.getTimemarks(params)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -40,12 +40,12 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCFound+string(s))
 }
 
-func (tdb timemarksDB) getTimemarks(params parameters) ([]Timemark, error) {
+func (y YourTime) getTimemarks(params parameters) ([]Timemark, error) {
 	var (
 		t Timemark
 		p []Timemark
 	)
-	rows, err := tdb.Query("SELECT id, timemark, content, votes, author, approved, timestamp FROM timemarks WHERE videoid = $1 ORDER BY votes DESC OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
+	rows, err := y.DB.Query("SELECT id, timemark, content, votes, author, approved, timestamp FROM timemarks WHERE videoid = $1 ORDER BY votes DESC OFFSET $2 LIMIT $3", params.videoID, params.offset, params.limit)
 	if err != nil {
 		return nil, err
 	}

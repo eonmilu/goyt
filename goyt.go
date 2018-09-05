@@ -64,6 +64,3 @@ type User struct {
 	Identifier string `json:"email"`
 }
 
-type timemarksDB struct {
-	*sql.DB
-}
