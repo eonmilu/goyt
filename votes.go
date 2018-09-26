@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -213,14 +214,15 @@ func (y YourTime) getVoteParameters(r *http.Request) (vote, error) {
 }
 
 func (y YourTime) getUserIdentifier(r *http.Request) (string, error) {
+	pureAddr := strings.Split(r.RemoteAddr, ":")[0]
 	tkn := getTokenFromCookies(r)
 	if tkn == "" {
-		return r.RemoteAddr, nil
+		return pureAddr, nil
 	}
 
 	email, err := y.getEmailFromToken(tkn)
 	if err != nil {
-		return r.RemoteAddr, err
+		return pureAddr, err
 	}
 	return email, nil
 }
