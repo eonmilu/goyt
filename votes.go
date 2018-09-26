@@ -1,6 +1,7 @@
 package goyt
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -75,20 +76,17 @@ func (y YourTime) upvote(v vote) error {
 
 	// Set the upvote in the user's profile
 	_, err := y.DB.Exec(stmt, v.Identifier)
-	log.Println("1")
 	if err != nil {
 		return err
 	}
 	// Remove possible downvote
 	_, err = y.DB.Exec("UPDATE users SET downvotes= array_remove(downvotes, $1) where identifier=$2", v.ID, v.Identifier)
-	log.Println("2")
 
 	if err != nil {
 		return err
 	}
 	// Change the timemark's votes
 	_, err = y.DB.Exec("UPDATE timemarks SET votes= votes + 1 where id=$1", v.ID)
-	log.Println("3")
 
 	return err
 }
@@ -100,21 +98,18 @@ func (y YourTime) downvote(v vote) error {
 
 	// Set the downvote in the user's profile
 	_, err := y.DB.Exec(stmt, v.Identifier)
-	log.Println("4")
 
 	if err != nil {
 		return err
 	}
 	// Remove possible upvote
 	_, err = y.DB.Exec("UPDATE users SET upvotes= array_remove(upvotes, $1) where identifier=$2", v.ID, v.Identifier)
-	log.Println("5")
 
 	if err != nil {
 		return err
 	}
 	// Change the timemark's votes
 	_, err = y.DB.Exec("UPDATE timemarks SET votes= votes - 1 where id=$1", v.ID)
-	log.Println("6")
 
 	return err
 }
@@ -132,26 +127,21 @@ func (y YourTime) unsetVote(v vote) error {
 	}
 	if unsetUpvote {
 		_, err := y.DB.Exec("UPDATE users SET upvotes=array_remove(upvotes, $1)", v.ID)
-		log.Println("7")
 
 		if err != nil {
 			return err
 		}
 		// Change the timemark's votes
 		_, err = y.DB.Exec("UPDATE timemarks SET votes= votes - 1 where id=$1", v.ID)
-		log.Println("8")
 
 	} else if unsetDownvote {
 		_, err := y.DB.Exec("UPDATE users SET downvotes=array_remove(downvotes, $1)", v.ID)
-		log.Println("9")
 
 		if err != nil {
 			return err
 		}
 		// Change the timemark's votes
 		_, err = y.DB.Exec("UPDATE timemarks SET votes= votes + 1 where id=$1", v.ID)
-		log.Println("10")
-
 	}
 	return nil
 }
@@ -162,14 +152,14 @@ func (y YourTime) hasUpvoted(v vote) (bool, error) {
 	stmt := fmt.Sprintf("SELECT '{%d}'= ANY(select upvotes from users where identifier=$1)", v.ID)
 
 	row := y.DB.QueryRow(stmt, v.Identifier)
-	log.Println("11")
 
-	log.Println("011")
-
-	isUpvoted := false
+	var isUpvoted sql.NullBool
 	err := row.Scan(&isUpvoted)
-	log.Printf("%t", isUpvoted)
-	return isUpvoted, err
+
+	if isUpvoted.Valid {
+		return isUpvoted.Bool, err
+	}
+	return false, err
 }
 
 func (y YourTime) hasDownvoted(v vote) (bool, error) {
@@ -178,9 +168,7 @@ func (y YourTime) hasDownvoted(v vote) (bool, error) {
 	stmt := fmt.Sprintf("SELECT '{%d}' = ANY(select downvotes from users where identifier=$1)", v.ID)
 
 	row := y.DB.QueryRow(stmt, v.Identifier)
-	log.Println("12")
 
-	log.Println("012")
 	isDownvoted := false
 	err := row.Scan(&isDownvoted)
 	return isDownvoted, err
