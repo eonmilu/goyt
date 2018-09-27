@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,7 +22,6 @@ func (y YourTime) Votes(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	params, err := y.getVoteParameters(r)
-	log.Printf("%v", params)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -46,7 +44,6 @@ func (y YourTime) handleVoteAction(v vote) error {
 		if err != nil {
 			return err
 		}
-		log.Println(hasUpvoted)
 		if !hasUpvoted {
 			err := y.upvote(v)
 			return err
@@ -70,46 +67,50 @@ func (y YourTime) handleVoteAction(v vote) error {
 }
 
 func (y YourTime) upvote(v vote) error {
-	// TODO: dangerous unsanitized integer in statement.
-	// This is because lib/pq does not support arrays in statements
-	stmt := fmt.Sprintf("UPDATE users SET upvotes= upvotes || '{%d}' where identifier=$1", v.ID)
-
-	// Set the upvote in the user's profile
-	_, err := y.DB.Exec(stmt, v.Identifier)
-	if err != nil {
-		return err
-	}
-	// Remove possible downvote
-	_, err = y.DB.Exec("UPDATE users SET downvotes= array_remove(downvotes, $1) where identifier=$2", v.ID, v.Identifier)
-
-	if err != nil {
-		return err
-	}
-	// Change the timemark's votes
-	_, err = y.DB.Exec("UPDATE timemarks SET votes= votes + 1 where id=$1", v.ID)
-
-	return err
+	return y.vote(v, "upvotes")
 }
 
 func (y YourTime) downvote(v vote) error {
+	return y.vote(v, "downvotes")
+}
+
+func (y YourTime) vote(v vote, voteCollection string) error {
+	var (
+		opposite   string
+		voteNumber int8
+	)
+
+	switch voteCollection {
+	case "upvotes":
+		voteNumber = 1
+		opposite = "downvotes"
+	case "downvotes":
+		voteNumber = -1
+		opposite = "upvotes"
+	default:
+		return errors.New("Invalid collection string")
+	}
+
 	// TODO: dangerous unsanitized integer in statement.
 	// This is because lib/pq does not support arrays in statements
-	stmt := fmt.Sprintf("UPDATE users SET downvotes= downvotes || '{%d}' where identifier=$1", v.ID)
+	stmt := fmt.Sprintf("UPDATE users SET %s= %s || '{%d}' where identifier=$1", voteCollection, voteCollection, v.ID)
 
-	// Set the downvote in the user's profile
+	// Set the action in the user's profile
 	_, err := y.DB.Exec(stmt, v.Identifier)
-
 	if err != nil {
 		return err
 	}
-	// Remove possible upvote
-	_, err = y.DB.Exec("UPDATE users SET upvotes= array_remove(upvotes, $1) where identifier=$2", v.ID, v.Identifier)
 
+	// Remove possible opposite vote
+	stmt = fmt.Sprintf("UPDATE users SET %s= array_remove(%s, $1) where identifier=$2", opposite, opposite)
+	_, err = y.DB.Exec(stmt, v.ID, v.Identifier)
 	if err != nil {
 		return err
 	}
+
 	// Change the timemark's votes
-	_, err = y.DB.Exec("UPDATE timemarks SET votes= votes - 1 where id=$1", v.ID)
+	stmt = fmt.Sprintf("UPDATE timemarks SET votes= votes + %d where id=$1", voteNumber)
+	_, err = y.DB.Exec(stmt, v.ID)
 
 	return err
 }
@@ -147,31 +148,27 @@ func (y YourTime) unsetVote(v vote) error {
 }
 
 func (y YourTime) hasUpvoted(v vote) (bool, error) {
-	// TODO: dangerous unsanitized integer in statement.
-	// This is because lib/pq does not support arrays in statements
-	stmt := fmt.Sprintf("SELECT '{%d}'= ANY(select upvotes from users where identifier=$1)", v.ID)
-
-	row := y.DB.QueryRow(stmt, v.Identifier)
-
-	var isUpvoted sql.NullBool
-	err := row.Scan(&isUpvoted)
-
-	if isUpvoted.Valid {
-		return isUpvoted.Bool, err
-	}
-	return false, err
+	return y.hasVoted(v, "upvotes")
 }
 
 func (y YourTime) hasDownvoted(v vote) (bool, error) {
+	return y.hasVoted(v, "downvotes")
+}
+
+func (y YourTime) hasVoted(v vote, voteCollection string) (bool, error) {
 	// TODO: dangerous unsanitized integer in statement.
 	// This is because lib/pq does not support arrays in statements
-	stmt := fmt.Sprintf("SELECT '{%d}' = ANY(select downvotes from users where identifier=$1)", v.ID)
+	stmt := fmt.Sprintf("SELECT '{%d}'= ANY(select %s from users where identifier=$1)", v.ID, voteCollection)
 
 	row := y.DB.QueryRow(stmt, v.Identifier)
 
-	isDownvoted := false
-	err := row.Scan(&isDownvoted)
-	return isDownvoted, err
+	var isVoted sql.NullBool
+	err := row.Scan(&isVoted)
+
+	if isVoted.Valid {
+		return isVoted.Bool, err
+	}
+	return false, err
 }
 
 func (y YourTime) getVoteParameters(r *http.Request) (vote, error) {
