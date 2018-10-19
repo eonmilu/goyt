@@ -76,20 +76,20 @@ func (y YourTime) downvote(v vote) error {
 
 func (y YourTime) vote(v vote, voteCollection string) error {
 	var (
-		opposite   string
 		voteNumber int8
 	)
 
 	switch voteCollection {
 	case "upvotes":
 		voteNumber = 1
-		opposite = "downvotes"
 	case "downvotes":
 		voteNumber = -1
-		opposite = "upvotes"
 	default:
 		return errors.New("Invalid collection string")
 	}
+
+	// unset any votes
+	y.unsetVote(v)
 
 	// TODO: dangerous unsanitized integer in statement.
 	// This is because lib/pq does not support arrays in statements
@@ -97,13 +97,6 @@ func (y YourTime) vote(v vote, voteCollection string) error {
 
 	// Set the action in the user's profile
 	_, err := y.DB.Exec(stmt, v.Identifier)
-	if err != nil {
-		return err
-	}
-
-	// Remove possible opposite vote
-	stmt = fmt.Sprintf("UPDATE users SET %s= array_remove(%s, $1) where identifier=$2", opposite, opposite)
-	_, err = y.DB.Exec(stmt, v.ID, v.Identifier)
 	if err != nil {
 		return err
 	}
@@ -121,11 +114,6 @@ func (y YourTime) unsetVote(v vote) error {
 	if err != nil {
 		return err
 	}
-	// Remove the downvote in the user's profile
-	unsetDownvote, err := y.hasDownvoted(v)
-	if err != nil {
-		return err
-	}
 	if unsetUpvote {
 		_, err := y.DB.Exec("UPDATE users SET upvotes=array_remove(upvotes, $1)", v.ID)
 
@@ -135,7 +123,14 @@ func (y YourTime) unsetVote(v vote) error {
 		// Change the timemark's votes
 		_, err = y.DB.Exec("UPDATE timemarks SET votes= votes - 1 where id=$1", v.ID)
 
-	} else if unsetDownvote {
+	}
+
+	// Remove the downvote in the user's profile
+	unsetDownvote, err := y.hasDownvoted(v)
+	if err != nil {
+		return err
+	}
+	if unsetDownvote {
 		_, err := y.DB.Exec("UPDATE users SET downvotes=array_remove(downvotes, $1)", v.ID)
 
 		if err != nil {
@@ -158,7 +153,7 @@ func (y YourTime) hasDownvoted(v vote) (bool, error) {
 func (y YourTime) hasVoted(v vote, voteCollection string) (bool, error) {
 	// TODO: dangerous unsanitized integer in statement.
 	// This is because lib/pq does not support arrays in statements
-	stmt := fmt.Sprintf("SELECT '{%d}'= ANY(select %s from users where identifier=$1)", v.ID, voteCollection)
+	stmt := fmt.Sprintf("SELECT '{%d}' && (select %s from users where identifier=$1)", v.ID, voteCollection)
 
 	row := y.DB.QueryRow(stmt, v.Identifier)
 
