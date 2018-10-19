@@ -10,6 +10,8 @@ import (
 // of Timemark objects matching the given URL, offset and limit
 func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	EnableCORS(w)
+	sp := searchResponse{}
+	var err error
 
 	params := parameters{
 		videoID: r.URL.Query().Get("v"),
@@ -18,26 +20,43 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	}
 	params.checkParameters()
 
-	p, err := y.getTimemarks(params)
+	sp.timemarks, err = y.getTimemarks(params)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
 		return
 	}
 
-	// Check p's length to see if there was any result
-	if len(p) == 0 {
+	// Check sp.timemarks's length to see if there was any result
+	if len(sp.timemarks) == 0 {
 		fmt.Fprintf(w, sCNotFound)
 		return
 	}
 
-	s, err := json.Marshal(p)
+	for i := 0; i < len(sp.timemarks); i++ {
+		author, err := y.getTimemarkAuthor(sp.timemarks[i].Author)
+		if err != nil {
+			// Fallback user
+			sp.authors[i] = Author{-1, "Undefined", ""}
+		}
+		sp.authors[i] = author
+	}
+
+	s, err := json.Marshal(sp)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
 		return
 	}
 	fmt.Fprintf(w, sCFound+string(s))
+}
+
+func (y YourTime) getTimemarkAuthor(id int64) (Author, error) {
+	author := Author{}
+	row := y.DB.QueryRow("SELECT username, url FROM users WHERE id=$1", id)
+
+	err := row.Scan(&author.Username, &author.URL)
+	return author, err
 }
 
 func (y YourTime) getTimemarks(params parameters) ([]Timemark, error) {
@@ -63,6 +82,11 @@ func (y YourTime) getTimemarks(params parameters) ([]Timemark, error) {
 	}
 
 	return p, nil
+}
+
+type searchResponse struct {
+	timemarks []Timemark `json:"timemarks"`
+	authors   []Author   `json:"authors"`
 }
 
 type parameters struct {
