@@ -47,7 +47,11 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s, err := json.Marshal(sp)
+<<<<<<< HEAD
 
+=======
+	fmt.Printf("%s", s)
+>>>>>>> 49f628d66b619cb33cf585465291fd5b3a0c114a
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
