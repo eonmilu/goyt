@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-var fallbackAuthor = Author{-1, "Undefined", ""}
+var fallbackAuthor = Author{-1, "Undefined", "", false}
 
 // Search writes to the ResponseWriter a JSON-encoded array
 // of Timemark objects matching the given URL, offset and limit
@@ -39,19 +39,10 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	sp.Authors = make([]Author, len(sp.Timemarks))
 
 	for i := 0; i < len(sp.Timemarks); i++ {
-		author, err := y.getTimemarkAuthor(sp.Timemarks[i].Author)
-		if err != nil {
-			author = fallbackAuthor
-		}
-		sp.Authors[i] = author
+		sp.Authors[i] = y.getTimemarkAuthor(sp.Timemarks[i].Author)
 	}
 
 	s, err := json.Marshal(sp)
-<<<<<<< HEAD
-
-=======
-	fmt.Printf("%s", s)
->>>>>>> 49f628d66b619cb33cf585465291fd5b3a0c114a
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -60,26 +51,34 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCFound+string(s))
 }
 
-func (y YourTime) getTimemarkAuthor(id int64) (Author, error) {
+func (y YourTime) getTimemarkAuthor(id int64) Author {
 	nullableAuthor := nullAuthor{}
-	author := fallbackAuthor
-	row := y.DB.QueryRow("SELECT username, url FROM users WHERE id=$1", id)
+	// Set a fallback author in case there is any error,
+	// however do keep the original ID.
+	author := Author{
+		id,
+		fallbackAuthor.Username,
+		fallbackAuthor.URL,
+		false,
+	}
 
+	row := y.DB.QueryRow("SELECT username, url FROM users WHERE id=$1", id)
 	err := row.Scan(&nullableAuthor.Username, &nullableAuthor.URL)
 	if err != nil {
-		return author, err
+		return author
 	}
 
 	if !nullableAuthor.Username.Valid || !nullableAuthor.URL.Valid {
-		return fallbackAuthor, err
+		return author
 	}
 
 	author = Author{
 		id,
 		nullableAuthor.Username.String,
 		nullableAuthor.URL.String,
+		true,
 	}
-	return author, err
+	return author
 }
 
 type nullAuthor struct {

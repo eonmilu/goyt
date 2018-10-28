@@ -51,6 +51,7 @@ type Author struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
 	URL      string `json:"url"`
+	Valid    bool   `json:"valid"`
 }
 
 // User contains information on a user
