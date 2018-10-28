@@ -48,9 +48,9 @@ type Timemark struct {
 
 // Author is the type used to read info on an author from the database
 type Author struct {
-	ID       int64
-	Username string
-	URL      string
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+	URL      string `json:"url"`
 }
 
 // User contains information on a user
@@ -63,4 +63,3 @@ type User struct {
 	Sub        string `json:"sub"`
 	Identifier string `json:"email"`
 }
-
