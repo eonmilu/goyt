@@ -1,16 +1,19 @@
 package goyt
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 )
 
+var fallbackAuthor = Author{-1, "Undefined", ""}
+
 // Search writes to the ResponseWriter a JSON-encoded array
 // of Timemark objects matching the given URL, offset and limit
 func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	EnableCORS(w)
-	sp := searchResponse{}
+	var sp searchResponse
 	var err error
 
 	params := parameters{
@@ -20,29 +23,31 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 	}
 	params.checkParameters()
 
-	sp.timemarks, err = y.getTimemarks(params)
+	sp.Timemarks, err = y.getTimemarks(params)
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
 		return
 	}
 
-	// Check sp.timemarks's length to see if there was any result
-	if len(sp.timemarks) == 0 {
+	// Check sp.Timemarks's length to see if there was any result
+	if len(sp.Timemarks) == 0 {
 		fmt.Fprintf(w, sCNotFound)
 		return
 	}
 
-	for i := 0; i < len(sp.timemarks); i++ {
-		author, err := y.getTimemarkAuthor(sp.timemarks[i].Author)
+	sp.Authors = make([]Author, len(sp.Timemarks))
+
+	for i := 0; i < len(sp.Timemarks); i++ {
+		author, err := y.getTimemarkAuthor(sp.Timemarks[i].Author)
 		if err != nil {
-			// Fallback user
-			sp.authors[i] = Author{-1, "Undefined", ""}
+			author = fallbackAuthor
 		}
-		sp.authors[i] = author
+		sp.Authors[i] = author
 	}
 
 	s, err := json.Marshal(sp)
+
 	if err != nil {
 		fmt.Fprintf(w, sCError)
 		fmt.Printf("%s", err)
@@ -52,11 +57,31 @@ func (y YourTime) Search(w http.ResponseWriter, r *http.Request) {
 }
 
 func (y YourTime) getTimemarkAuthor(id int64) (Author, error) {
-	author := Author{}
+	nullableAuthor := nullAuthor{}
+	author := fallbackAuthor
 	row := y.DB.QueryRow("SELECT username, url FROM users WHERE id=$1", id)
 
-	err := row.Scan(&author.Username, &author.URL)
+	err := row.Scan(&nullableAuthor.Username, &nullableAuthor.URL)
+	if err != nil {
+		return author, err
+	}
+
+	if !nullableAuthor.Username.Valid || !nullableAuthor.URL.Valid {
+		return fallbackAuthor, err
+	}
+
+	author = Author{
+		id,
+		nullableAuthor.Username.String,
+		nullableAuthor.URL.String,
+	}
 	return author, err
+}
+
+type nullAuthor struct {
+	ID       sql.NullInt64
+	Username sql.NullString
+	URL      sql.NullString
 }
 
 func (y YourTime) getTimemarks(params parameters) ([]Timemark, error) {
@@ -85,8 +110,8 @@ func (y YourTime) getTimemarks(params parameters) ([]Timemark, error) {
 }
 
 type searchResponse struct {
-	timemarks []Timemark `json:"timemarks"`
-	authors   []Author   `json:"authors"`
+	Timemarks []Timemark `json:"timemarks"`
+	Authors   []Author   `json:"authors"`
 }
 
 type parameters struct {
