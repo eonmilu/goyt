@@ -32,7 +32,18 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 
 	user.token = string(token)
 
-	err = y.handleExistingUser(user)
+	userExists, err := y.userExistsByIdentifier(user.Identifier)
+	if !isLegit {
+		fmt.Fprintf(w, sCBadLogin)
+		return
+	}
+
+	if userExists {
+		err = y.handleExistingUser(user)
+	} else {
+		err = y.handleNewUser(user)
+	}
+
 	if err != nil {
 		log.Printf("%s", err)
 		fmt.Fprintf(w, sCError)
