@@ -9,7 +9,10 @@ import (
 // EnableCORS edits the response headers to allow CORS from any source
 func EnableCORS(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// Since a wildcard Access-Control-Allow-Origin header is not allowed
+	// for jQuery AJAX requests with cookies, allow only some domains.
+	w.Header().Set("Access-Control-Allow-Origin", "https://www.youtube.com")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
 // CreateUsers tries to identify the user. If it fails, it creates a new one
