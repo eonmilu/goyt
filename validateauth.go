@@ -68,12 +68,14 @@ func (y YourTime) userExistsByIdentifier(identifier string) (bool, error) {
 }
 
 func (y YourTime) handleNewUser(user User) error {
-	_, err := y.DB.Exec("INSERT INTO users (token, identifier) VALUES ($1, $2)", user.token, user.Identifier)
+	_, err := y.DB.Exec("INSERT INTO users (token, identifier, username, url, picture) VALUES ($1, $2, $3, $4, $5)",
+		user.token, user.Identifier, user.Username, user.URL, user.Picture)
 	return err
 }
 
 func (y YourTime) handleExistingUser(user User) error {
-	_, err := y.DB.Exec("UPDATE users SET token=$1 WHERE identifier=$2", user.token, user.Identifier)
+	_, err := y.DB.Exec("UPDATE users SET token=$1, username=$2, url=$3, picture=$4 WHERE identifier=$5",
+		user.token, user.Username, user.URL, user.Picture, user.Identifier)
 	return err
 }
 
@@ -116,6 +118,7 @@ func (y YourTime) getUserData(t token, user *User) error {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Printf(string(body))
 	err = json.Unmarshal(body, user)
 	if err != nil {
 		log.Printf("%s", err)

@@ -62,7 +62,7 @@ type User struct {
 	Aud        string `json:"aud"`
 	Sub        string `json:"sub"`
 	Identifier string `json:"email"`
-	Username   string `json:"username"`
-	URL        string `json:"url"`
+	Username   string `json:"name"`
+	URL        string `json:"url"` // TODO: ask user for youtube id
 	Picture    string `json:"picture"`
 }
