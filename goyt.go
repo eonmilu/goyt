@@ -54,15 +54,12 @@ type Author struct {
 	Valid    bool   `json:"valid"`
 }
 
-// User contains information on a user
+// User contains information on a user or channel
 type User struct {
-	id    int32
-	token string
+	id int32
 	// Auth is the unmarshaled data structure AuthTokenURL returns
-	Aud        string `json:"aud"`
-	Sub        string `json:"sub"`
-	Identifier string `json:"email"`
-	Username   string `json:"name"`
+	Identifier string `json:"identifier"`
+	Username   string `json:"username"`
 	URL        string `json:"url"` // TODO: ask user for youtube id
 	Picture    string `json:"picture"`
 }
