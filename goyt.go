@@ -63,3 +63,23 @@ type User struct {
 	URL        string `json:"url"` // TODO: ask user for youtube id
 	Picture    string `json:"picture"`
 }
+
+type youTubeChannelResponse struct {
+	Metadata struct {
+		ChannelMetadataRenderer struct {
+			Title       string `json:"title"`
+			Description string `json:"description"`
+			ExternalID  string `json:"externalId"`
+			Avatar      struct {
+				Thumbnails []struct {
+					URL    string `json:"url"`
+					Width  int    `json:"width"`
+					Height int    `json:"height"`
+				} `json:"thumbnails"`
+			} `json:"avatar"`
+			ChannelURL            string   `json:"channelUrl"`
+			IsFamilySafe          bool     `json:"isFamilySafe"`
+			AvailableCountryCodes []string `json:"availableCountryCodes"`
+		} `json:"channelMetadataRenderer"`
+	} `json:"metadata"`
+}
