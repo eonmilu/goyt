@@ -2,11 +2,13 @@ package goyt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 )
 
@@ -16,27 +18,28 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	EnableCORS(w)
 
 	user := User{}
-	r.ParseForm()
-	token := getToken(r)
 
-	isLegit, err := token.GetIfLegit(y, &user)
+	r.ParseForm()
+	channelID := getFormParameter(r, "channelid")
+	secretCode := getFormParameter(r, "secretcode")
+	if channelID == "" || secretCode == "" {
+		fmt.Fprintf(w, sCError)
+		return
+	}
+
+	isValid, err := y.validateChannel(channelID, secretCode)
+
 	if err != nil {
 		log.Printf("%s", err)
 		fmt.Fprintf(w, sCError)
 		return
 	}
-	if !isLegit {
+	if !isValid {
 		fmt.Fprintf(w, sCBadLogin)
 		return
 	}
-
-	user.token = string(token)
 
 	userExists, err := y.userExistsByIdentifier(user.Identifier)
-	if !isLegit {
-		fmt.Fprintf(w, sCBadLogin)
-		return
-	}
 
 	if userExists {
 		err = y.handleExistingUser(user)
@@ -49,15 +52,50 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, sCError)
 		return
 	}
+	token := "not implemented" // TODO: use token login
+
 	cookie := http.Cookie{
 		Name:    "yourtime-token-server",
 		Path:    "/",
-		Value:   string(token),
+		Value:   token,
 		Expires: time.Now().Add(32 * 365 * 24 * time.Hour),
 		Secure:  true,
 	}
 	http.SetCookie(w, &cookie)
 	fmt.Fprintf(w, sCOK)
+}
+
+func (y YourTime) validateChannel(channelID, secretCode string) (bool, error) {
+	channel, err := getChannel(channelID)
+}
+
+func getChannel(id string) (User, error) {
+	channel := User{}
+
+	req, err := http.NewRequest("GET", "https://www.youtube.com/channel/"+id, nil)
+	if err != nil {
+		log.Printf("%s", err)
+		return channel, err
+	}
+
+	// This User-Agent header decreases the request data from 1MB to ~81KB
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) (compatible; YourTime/1.0; +https://oxygenrain.com/yourtime/crawler.html)")
+
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("%s", err)
+		return channel, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	// TODO: parse html and get picture, username and token verif
+	re := regexp.MustCompile(`<!--(?P<match>(.*))-->`)
+	data := re.FindStringSubmatch(string(body))[1]
+
+	return channel, errors.New("Not implemented")
 }
 
 func (y YourTime) userExistsByIdentifier(identifier string) (bool, error) {
@@ -67,23 +105,23 @@ func (y YourTime) userExistsByIdentifier(identifier string) (bool, error) {
 	return result, err
 }
 
-func (y YourTime) handleNewUser(user User) error {
+func (y YourTime) handleNewUser(user User, token string) error {
 	_, err := y.DB.Exec("INSERT INTO users (token, identifier, username, url, picture) VALUES ($1, $2, $3, $4, $5)",
-		user.token, user.Identifier, user.Username, user.URL, user.Picture)
+		token, user.Identifier, user.Username, user.URL, user.Picture)
 	return err
 }
 
-func (y YourTime) handleExistingUser(user User) error {
+func (y YourTime) handleExistingUser(user User, token string) error {
 	_, err := y.DB.Exec("UPDATE users SET token=$1, username=$2, url=$3, picture=$4 WHERE identifier=$5",
-		user.token, user.Username, user.URL, user.Picture, user.Identifier)
+		token, user.Username, user.URL, user.Picture, user.Identifier)
 	return err
 }
 
-type token string
+type token string // TODO: delete and replace
 
-func getToken(r *http.Request) token {
-	if len(r.Form["idtoken"]) > 0 {
-		return token(r.Form["idtoken"][0])
+func getFormParameter(r *http.Request, param string) string {
+	if len(r.Form[param]) > 0 {
+		return r.Form[param][0]
 	}
 	return ""
 }
