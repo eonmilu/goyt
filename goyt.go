@@ -24,10 +24,6 @@ const (
 
 // YourTime is a struct containing the methods and variables
 type YourTime struct {
-	// AuthTokenURL is the URL which Google provides to validate a token
-	AuthTokenURL string
-	// GoogleClientID is the URL the request is coming from
-	GoogleClientID string
 	// DB is the database where the Timemarks and users are stored
 	DB *sql.DB
 }
@@ -58,10 +54,11 @@ type Author struct {
 type User struct {
 	id int32
 	// Auth is the unmarshaled data structure AuthTokenURL returns
-	Identifier string `json:"identifier"`
-	Username   string `json:"username"`
-	URL        string `json:"url"` // TODO: ask user for youtube id
-	Picture    string `json:"picture"`
+	Identifier  string `json:"identifier"`
+	Username    string `json:"username"`
+	URL         string `json:"url"` // TODO: ask user for youtube id
+	Picture     string `json:"picture"`
+	Description string `json:"description"`
 }
 
 type youTubeChannelResponse struct {
@@ -77,9 +74,8 @@ type youTubeChannelResponse struct {
 					Height int    `json:"height"`
 				} `json:"thumbnails"`
 			} `json:"avatar"`
-			ChannelURL            string   `json:"channelUrl"`
-			IsFamilySafe          bool     `json:"isFamilySafe"`
-			AvailableCountryCodes []string `json:"availableCountryCodes"`
+			ChannelURL   string `json:"channelUrl"`
+			IsFamilySafe bool   `json:"isFamilySafe"`
 		} `json:"channelMetadataRenderer"`
 	} `json:"metadata"`
 }
