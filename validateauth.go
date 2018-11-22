@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -67,6 +68,12 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 
 func (y YourTime) validateChannel(channelID, secretCode string) (bool, error) {
 	channel, err := getChannel(channelID)
+	if err != nil {
+		return false, err
+	}
+
+	// If the secret code is in the channel's description, the request is valid
+	return strings.Contains(channel.Description, secretCode), nil
 }
 
 func getChannel(id string) (User, error) {
@@ -91,9 +98,23 @@ func getChannel(id string) (User, error) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	// TODO: parse html and get picture, username and token verif
+
 	re := regexp.MustCompile(`<!--(?P<match>(.*))-->`)
-	data := re.FindStringSubmatch(string(body))[1]
+	rawData := re.FindStringSubmatch(string(body))[1]
+	var data youTubeChannelResponse
+	err = json.Unmarshal([]byte(rawData), &data)
+	if err != nil {
+		return channel, err
+	}
+	temp := data.Metadata.ChannelMetadataRenderer
+	channel = User{
+		-1,
+		temp.ExternalID,
+		temp.Title,
+		temp.ChannelURL,
+		temp.Avatar.Thumbnails[0].URL,
+		temp.Description,
+	}
 
 	return channel, errors.New("Not implemented")
 }
@@ -126,16 +147,6 @@ func getFormParameter(r *http.Request, param string) string {
 	return ""
 }
 
-func (t token) GetIfLegit(y YourTime, user *User) (bool, error) {
-	err := y.getUserData(t, user)
-	if err != nil {
-		log.Printf("%s", err)
-		return false, err
-	}
-	legit := y.isValidResponse(*user)
-	return legit, nil
-}
-
 func (y YourTime) getUserData(t token, user *User) error {
 	payload := url.Values{}
 	payload.Add("id_token", string(t))
@@ -164,9 +175,4 @@ func (y YourTime) getUserData(t token, user *User) error {
 	}
 
 	return nil
-}
-
-func (y YourTime) isValidResponse(u User) bool {
-	// If both Aud is from the Your Time client ID and Sub contains anything then the login was succesful
-	return u.Aud == y.GoogleClientID && u.Sub != ""
 }
