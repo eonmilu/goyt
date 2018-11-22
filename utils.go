@@ -48,9 +48,8 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// If there is no record of the user, create one
-		err = y.handleNewUser(User{
-			Identifier: trueAddr,
-		})
+		err = y.handleNewUser(User{Identifier: trueAddr}, "")
+
 		if err != nil {
 			fmt.Fprintf(w, sCError)
 			fmt.Printf("%s", err)
