@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -145,34 +144,4 @@ func getFormParameter(r *http.Request, param string) string {
 		return r.Form[param][0]
 	}
 	return ""
-}
-
-func (y YourTime) getUserData(t token, user *User) error {
-	payload := url.Values{}
-	payload.Add("id_token", string(t))
-
-	req, err := http.NewRequest("GET", y.AuthTokenURL+payload.Encode(), nil)
-	if err != nil {
-		log.Printf("%s", err)
-		return err
-	}
-
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("%s", err)
-		return err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf(string(body))
-	err = json.Unmarshal(body, user)
-	if err != nil {
-		log.Printf("%s", err)
-		return err
-	}
-
-	return nil
 }
