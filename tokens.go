@@ -13,10 +13,40 @@ func (y YourTime) CreateVerifToken(w http.ResponseWriter, r *http.Request) {
 	channelID := getFormParameter(r, "channelid")
 	if channelID == "" {
 		fmt.Fprintf(w, sCError)
+		return
 	}
-	// TODO: create token table
-	// TODO: add ids and token to table
-	fmt.Fprintf(w, randStringBytes(randStringLength))
+	userExists, err := y.userSecretExists(channelID)
+	if err != nil {
+		fmt.Printf("%s", err)
+		fmt.Fprintf(w, sCError)
+		return
+	}
+
+	secret := randStringBytes(randStringLength)
+	if userExists {
+		_, err := y.DB.Exec("UPDATE tokens SET secret = $1 WHERE channelid = $2", secret, channelID)
+		if err != nil {
+			fmt.Printf("%s", err)
+			fmt.Fprintf(w, sCError)
+			return
+		}
+	} else {
+		_, err := y.DB.Exec("INSERT INTO tokens VALUES ($1, $2)", channelID, secret)
+		if err != nil {
+			fmt.Printf("%s", err)
+			fmt.Fprintf(w, sCError)
+			return
+		}
+	}
+
+	fmt.Fprintf(w, secret)
+}
+
+func (y YourTime) userSecretExists(channelid string) (bool, error) {
+	result := false
+	row := y.DB.QueryRow("SELECT exists(SELECT 1 FROM tokens WHERE channelid=$1)", channelid)
+	err := row.Scan(&result)
+	return result, err
 }
 
 // https://stackoverflow.com/a/31832326/8774937
