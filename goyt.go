@@ -2,6 +2,8 @@ package goyt
 
 import (
 	"database/sql"
+	"fmt"
+	"time"
 
 	// Init the postgres' drivers
 	_ "github.com/lib/pq"
@@ -78,4 +80,15 @@ type youTubeChannelResponse struct {
 			IsFamilySafe bool   `json:"isFamilySafe"`
 		} `json:"channelMetadataRenderer"`
 	} `json:"metadata"`
+}
+
+func (y YourTime) removeOldVerifTokens() {
+	for {
+		_, err := y.DB.Exec("DELETE FROM tokens WHERE age(now(), ts) > INTERVAL '1 day';")
+		if err != nil {
+			fmt.Printf("%s", err)
+		}
+
+		time.Sleep(time.Second)
+	}
 }
