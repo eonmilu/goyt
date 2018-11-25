@@ -28,6 +28,8 @@ const (
 type YourTime struct {
 	// DB is the database where the Timemarks and users are stored
 	DB *sql.DB
+	// JWTSecret is the secret that will be used to sign and validate JWT
+	JWTSecret string
 }
 
 // Timemark is the data structure for a timemark
