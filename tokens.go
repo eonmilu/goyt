@@ -49,6 +49,14 @@ func (y YourTime) userSecretExists(channelid string) (bool, error) {
 	return result, err
 }
 
+func (y YourTime) getVerifSecretFromDB(channelid string) (string, error) {
+	var secret string
+	row := y.DB.QueryRow("SELECT secret FROM tokens WHERE channelid=$1", channelid)
+	err := row.Scan(&secret)
+
+	return secret, err
+}
+
 // https://stackoverflow.com/a/31832326/8774937
 const randStringLength = 32
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
