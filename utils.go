@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // EnableCORS edits the response headers to allow CORS from any source
@@ -48,7 +50,7 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// If there is no record of the user, create one
-		err = y.handleNewUser(User{Identifier: trueAddr}, "")
+		err = y.handleNewUser(User{Identifier: trueAddr})
 
 		if err != nil {
 			fmt.Fprintf(w, sCError)
@@ -59,4 +61,15 @@ func (y YourTime) CreateUsers(h http.HandlerFunc) http.HandlerFunc {
 		// Pass to the next function
 		h(w, r)
 	})
+}
+
+func parseAndValidateToken(tokenString, secret string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return secret, nil
+	})
+	return token, err
 }
