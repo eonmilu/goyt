@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -11,7 +12,7 @@ import (
 // and adds it to a DB table, leaving 2 hours before expiration
 func (y YourTime) CreateVerifToken(w http.ResponseWriter, r *http.Request) {
 	channelID := getFormParameter(r, "channelid")
-	if channelID == "" {
+	if channelID == "" || !strings.HasPrefix(channelID, "UC") {
 		fmt.Fprintf(w, sCError)
 		return
 	}
@@ -57,6 +58,19 @@ func (y YourTime) getVerifSecretFromDB(channelid string) (string, error) {
 	return secret, err
 }
 
+// RemoveOldVerifTokens removes all tokens older than 24 hours every minute
+func (y YourTime) RemoveOldVerifTokens() {
+	for {
+		fmt.Printf("Removing old tokens...")
+		_, err := y.DB.Exec("DELETE FROM tokens WHERE age(now(), ts) > INTERVAL '1 day';")
+		if err != nil {
+			fmt.Printf("%s", err)
+		}
+
+		time.Sleep(time.Minute)
+	}
+}
+
 // https://stackoverflow.com/a/31832326/8774937
 const randStringLength = 32
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -84,9 +98,4 @@ func randStringBytes(n int) string {
 	}
 
 	return string(b)
-}
-
-// GetRandString writes to r a random string of length 32
-func GetRandString(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, randStringBytes(randStringLength))
 }
