@@ -2,8 +2,6 @@ package goyt
 
 import (
 	"database/sql"
-	"fmt"
-	"time"
 
 	// Init the postgres' drivers
 	_ "github.com/lib/pq"
@@ -56,7 +54,10 @@ type Author struct {
 
 // User contains information on a user or channel
 type User struct {
-	id int32
+	id  int32  `json:"id"`
+	iss string `json:"iss"`
+	iat int64  `json:"iat"`
+	idn string `json:"idn"`
 	// Auth is the unmarshaled data structure AuthTokenURL returns
 	Identifier  string `json:"identifier"`
 	Username    string `json:"username"`
@@ -82,15 +83,4 @@ type youTubeChannelResponse struct {
 			IsFamilySafe bool   `json:"isFamilySafe"`
 		} `json:"channelMetadataRenderer"`
 	} `json:"metadata"`
-}
-
-func (y YourTime) removeOldVerifTokens() {
-	for {
-		_, err := y.DB.Exec("DELETE FROM tokens WHERE age(now(), ts) > INTERVAL '1 day';")
-		if err != nil {
-			fmt.Printf("%s", err)
-		}
-
-		time.Sleep(time.Second)
-	}
 }
