@@ -2,7 +2,6 @@ package goyt
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // ValidateAuth gets the token from the HTTPS POST, validates it
@@ -20,9 +21,15 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 
 	r.ParseForm()
+
 	channelID := getFormParameter(r, "channelid")
-	secretCode := getFormParameter(r, "secretcode")
-	if channelID == "" || secretCode == "" {
+	if channelID == "" {
+		fmt.Fprintf(w, sCBadLogin)
+		return
+	}
+
+	secretCode, err := y.getVerifSecretFromDB(channelID)
+	if err != nil || secretCode == "" {
 		fmt.Fprintf(w, sCError)
 		return
 	}
@@ -40,6 +47,13 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userExists, err := y.userExistsByIdentifier(user.Identifier)
+	jwtoken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss":  "eonmilu",
+		"iat":  time.Now().Unix(),
+		"idn":  user.Identifier,
+		"user": user.Username,
+	})
+	jwtokenString, err := jwtoken.SignedString(y.JWTSecret)
 
 	if userExists {
 		err = y.handleExistingUser(user)
@@ -52,12 +66,11 @@ func (y YourTime) ValidateAuth(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, sCError)
 		return
 	}
-	token := "not implemented" // TODO: use token login
 
 	cookie := http.Cookie{
 		Name:    "yourtime-token-server",
 		Path:    "/",
-		Value:   token,
+		Value:   jwtokenString,
 		Expires: time.Now().Add(32 * 365 * 24 * time.Hour),
 		Secure:  true,
 	}
@@ -107,15 +120,14 @@ func getChannel(id string) (User, error) {
 	}
 	temp := data.Metadata.ChannelMetadataRenderer
 	channel = User{
-		-1,
-		temp.ExternalID,
-		temp.Title,
-		temp.ChannelURL,
-		temp.Avatar.Thumbnails[0].URL,
-		temp.Description,
+		Identifier:  temp.ExternalID,
+		Username:    temp.Title,
+		URL:         temp.ChannelURL,
+		Picture:     temp.Avatar.Thumbnails[0].URL,
+		Description: temp.Description,
 	}
 
-	return channel, errors.New("Not implemented")
+	return channel, nil
 }
 
 func (y YourTime) userExistsByIdentifier(identifier string) (bool, error) {
@@ -125,19 +137,17 @@ func (y YourTime) userExistsByIdentifier(identifier string) (bool, error) {
 	return result, err
 }
 
-func (y YourTime) handleNewUser(user User, token string) error {
-	_, err := y.DB.Exec("INSERT INTO users (token, identifier, username, url, picture) VALUES ($1, $2, $3, $4, $5)",
-		token, user.Identifier, user.Username, user.URL, user.Picture)
+func (y YourTime) handleNewUser(user User) error {
+	_, err := y.DB.Exec("INSERT INTO users (identifier, username, url, picture) VALUES ($1, $2, $3, $4)",
+		user.Identifier, user.Username, user.URL, user.Picture)
 	return err
 }
 
-func (y YourTime) handleExistingUser(user User, token string) error {
-	_, err := y.DB.Exec("UPDATE users SET token=$1, username=$2, url=$3, picture=$4 WHERE identifier=$5",
-		token, user.Username, user.URL, user.Picture, user.Identifier)
+func (y YourTime) handleExistingUser(user User) error {
+	_, err := y.DB.Exec("UPDATE users SET username=$1, url=$2, picture=$3 WHERE identifier=$4",
+		user.Username, user.URL, user.Picture, user.Identifier)
 	return err
 }
-
-type token string // TODO: delete and replace
 
 func getFormParameter(r *http.Request, param string) string {
 	if len(r.Form[param]) > 0 {
