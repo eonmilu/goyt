@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // Insert TODO:
@@ -101,10 +103,18 @@ func (y YourTime) getAuthor(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (y YourTime) userExistsByToken(token token) (bool, error) {
-	result := false
-	row := y.DB.QueryRow("SELECT exists(SELECT 1 FROM users WHERE token=$1)", token)
-	err := row.Scan(&result)
+func (y YourTime) userExistsByToken(tokenString string) (bool, error) {
+	token, err := parseAndValidateToken(tokenString, y.JWTSecret)
+	if err != nil {
+		return false, err
+	}
+	if !token.Valid {
+		return false, errors.New("Token not properly signed")
+	}
+
+	row := y.DB.QueryRow("SELECT exists(SELECT 1 FROM users WHERE identifier=$1)", token.Claims.(jwt.MapClaims)["idn"])
+	var result bool
+	err = row.Scan(&result)
 
 	return result, err
 }
