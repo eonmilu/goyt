@@ -34,7 +34,7 @@ func (y YourTime) RemoveAuth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, sCOK)
 }
 
-func getTokenFromCookies(r *http.Request) token {
+func getTokenFromCookies(r *http.Request) string {
 	cookies := r.Header.Get("Cookie")
 	re := regexp.MustCompile(`(?m)yourtime-token-server=.*[^\]|;]`)
 	cookie := re.FindAllString(cookies, 1)
@@ -42,9 +42,9 @@ func getTokenFromCookies(r *http.Request) token {
 	if len(cookie) > 0 {
 		tokens = strings.Split(cookie[0], "=")
 	}
-	tkn := token("")
+	tkn := ""
 	if len(tokens) >= 1 {
-		tkn = token(tokens[1])
+		tkn = tokens[1]
 	}
 	return tkn
 }

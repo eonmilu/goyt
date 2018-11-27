@@ -207,7 +207,7 @@ func (y YourTime) getUserIdentifier(r *http.Request) (string, error) {
 	return email, nil
 }
 
-func (y YourTime) getEmailFromToken(tkn token) (string, error) {
+func (y YourTime) getEmailFromToken(tkn string) (string, error) {
 	email := ""
 	row := y.DB.QueryRow("SELECT identifier FROM users WHERE token=$1", string(tkn))
 	err := row.Scan(&email)
