@@ -98,7 +98,7 @@ func getChannel(id string) (User, error) {
 	}
 
 	// This User-Agent header decreases the request data from 1MB to ~81KB
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) (compatible; YourTime/1.0; +https://oxygenrain.com/yourtime/crawler.html)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) (compatible; YourTime/1.0; +https://xmi.lu/yourtime/crawler.html)")
 
 	client := http.Client{
 		Timeout: 5 * time.Second,
